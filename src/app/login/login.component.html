@@ -1,0 +1,56 @@
+<div class="login-container">
+  <p-card class="login-card">
+    <ng-template pTemplate="header">
+      <div class="login-header">
+        <div class="logo">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="48" height="48" rx="12" fill="url(#gradient)"/>
+            <path d="M24 16L32 24L24 32L16 24L24 16Z" fill="white" fill-opacity="0.9"/>
+            <defs>
+              <linearGradient id="gradient" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#6366f1"/>
+                <stop offset="1" stop-color="#8b5cf6"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <h1 class="login-title">Velkommen tilbage</h1>
+        <p class="login-subtitle">Log ind for at fortsætte til Mit Indbo</p>
+      </div>
+    </ng-template>
+
+    <div class="login-form">
+      <p-message 
+        *ngIf="error$ | async as error" 
+        severity="error" 
+        [text]="error.message || 'Der opstod en fejl ved login'"
+        [closable]="true">
+      </p-message>
+
+      <p-button
+        type="button"
+        label="Log ind"
+        icon="pi pi-sign-in"
+        styleClass="p-button-primary login-button"
+        (click)="login()"
+        [disabled]="isLoading$ | async"
+        [loading]="isLoading$ | async">
+      </p-button>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <div class="login-footer">
+        <p class="footer-text">
+          Sikker login via Auth0
+        </p>
+      </div>
+    </ng-template>
+  </p-card>
+
+  <div class="background-decoration">
+    <div class="decoration-circle circle-1"></div>
+    <div class="decoration-circle circle-2"></div>
+    <div class="decoration-circle circle-3"></div>
+  </div>
+</div>
+
