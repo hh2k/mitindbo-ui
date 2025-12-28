@@ -35,6 +35,11 @@ export const routes: Routes = [
     loadComponent: () => import('./categories/categories-list.component').then(m => m.CategoriesListComponent),
     canActivate: [authGuard]
   },
+  {
+    path: 'places',
+    loadComponent: () => import('./places/places-list.component').then(m => m.PlacesListComponent),
+    canActivate: [authGuard]
+  },
   // Auth0 callback route - handled automatically by Auth0 SDK
 ];
 

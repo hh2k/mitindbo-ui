@@ -35,7 +35,11 @@ import { ButtonModule } from 'primeng/button';
             </a>
             <a routerLink="/categories" routerLinkActive="active" class="nav-link">
               <i class="pi pi-tags"></i>
-              <span>Kategorier</span>
+              <span>Tags</span>
+            </a>
+            <a routerLink="/places" routerLinkActive="active" class="nav-link">
+              <i class="pi pi-map-marker"></i>
+              <span>Placeringer</span>
             </a>
             <a routerLink="/profile" routerLinkActive="active" class="nav-link">
               <i class="pi pi-user"></i>

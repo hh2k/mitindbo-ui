@@ -3,13 +3,14 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 
-import { ItemsService, Item, Category } from '../services/items.service';
+import { ItemsService, Item, Tag, Place, DocumentOut } from '../services/items.service';
 
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
 import { InputNumberModule } from 'primeng/inputnumber';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { SelectModule } from 'primeng/select';
 import { MessageModule } from 'primeng/message';
 import { MessageService } from 'primeng/api';
@@ -27,6 +28,7 @@ import { ToastModule } from 'primeng/toast';
     InputTextModule,
     TextareaModule,
     InputNumberModule,
+    MultiSelectModule,
     SelectModule,
     MessageModule,
     ToastModule
@@ -67,68 +69,69 @@ import { ToastModule } from 'primeng/toast';
           </div>
 
           <div class="form-group">
-            <label for="category_id" class="p-label">Kategori *</label>
-            <div class="category-select-wrapper">
-              <p-select
-                id="category_id"
-                formControlName="category_id"
-                [options]="categoryOptions"
+            <label for="tags" class="p-label">Tags *</label>
+            <div class="tag-select-wrapper">
+              <p-multiSelect
+                id="tags"
+                formControlName="tags"
+                [options]="tagOptions"
                 optionLabel="name"
                 optionValue="id"
-                placeholder="Vælg kategori"
+                placeholder="Vælg tags"
                 [showClear]="true"
-                [class.ng-invalid]="itemForm.get('category_id')?.invalid && itemForm.get('category_id')?.touched"
+                display="chip"
+                [class.ng-invalid]="itemForm.get('tags')?.invalid && itemForm.get('tags')?.touched"
                 styleClass="w-full">
-              </p-select>
+              </p-multiSelect>
               <p-button 
-                label="+ Tilføj ny kategori" 
+                label="+ Tilføj tag" 
                 [text]="true"
                 styleClass="p-button-link"
-                (click)="showNewCategoryForm = !showNewCategoryForm">
+                (click)="showNewTagForm = !showNewTagForm">
               </p-button>
             </div>
             <p-message 
-              *ngIf="itemForm.get('category_id')?.invalid && itemForm.get('category_id')?.touched" 
+              *ngIf="itemForm.get('tags')?.invalid && itemForm.get('tags')?.touched" 
               severity="error" 
-              text="Kategori er påkrævet">
+              text="Mindst ét tag er påkrævet">
             </p-message>
             
-            <p-card *ngIf="showNewCategoryForm" class="new-category-form">
+            <p-card *ngIf="showNewTagForm" class="new-tag-form">
               <div class="form-group">
-                <label for="new_category_name" class="p-label">Navn på ny kategori *</label>
+                <label for="new_tag_name" class="p-label">Navn på tag *</label>
                 <input 
                   type="text" 
-                  id="new_category_name" 
+                  id="new_tag_name" 
                   pInputText
-                  [(ngModel)]="newCategoryName"
+                  [(ngModel)]="newTagName"
                   [ngModelOptions]="{standalone: true}"
                   placeholder="F.eks. Elektronik, Møbler, etc."
                 />
               </div>
               <div class="form-group">
-                <label for="new_category_description" class="p-label">Beskrivelse (valgfri)</label>
+                <label for="new_tag_description" class="p-label">Beskrivelse (valgfri)</label>
                 <textarea 
-                  id="new_category_description" 
+                  id="new_tag_description" 
                   pTextarea
-                  [(ngModel)]="newCategoryDescription"
+                  [(ngModel)]="newTagDescription"
                   [ngModelOptions]="{standalone: true}"
                   [rows]="2"
-                  placeholder="Beskrivelse af kategorien">
+                  placeholder="Beskrivelse af taggen">
                 </textarea>
               </div>
-              <div class="new-category-actions">
+              <div class="new-tag-actions">
                 <p-button 
-                  label="{{ creatingCategory ? 'Opretter...' : 'Opret kategori' }}" 
+                  label="{{ creatingTag ? 'Opretter...' : 'Opret tag' }}" 
                   icon="pi pi-check"
                   styleClass="p-button-primary"
-                  (click)="createNewCategory()"
-                  [disabled]="!newCategoryName || creatingCategory">
+                  (click)="createNewTag()"
+                  [disabled]="!newTagName || creatingTag">
                 </p-button>
                 <p-button 
                   label="Annuller" 
                   icon="pi pi-times"
                   styleClass="p-button-secondary"
-                  (click)="cancelNewCategory()">
+                  (click)="cancelNewTag()">
                 </p-button>
               </div>
             </p-card>
@@ -168,6 +171,31 @@ import { ToastModule } from 'primeng/toast';
                 styleClass="w-full">
               </p-inputNumber>
             </div>
+          </div>
+
+          <div class="form-group">
+            <label for="purchase_date" class="p-label">Købsdato</label>
+            <input 
+              type="date" 
+              id="purchase_date" 
+              pInputText
+              formControlName="purchase_date"
+              class="w-full"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="place" class="p-label">Placering</label>
+            <p-select
+              id="place"
+              formControlName="place"
+              [options]="placeOptions"
+              optionLabel="name"
+              optionValue="id"
+              placeholder="Vælg placering"
+              [showClear]="true"
+              styleClass="w-full">
+            </p-select>
           </div>
 
           <div class="form-group">
@@ -211,6 +239,55 @@ import { ToastModule } from 'primeng/toast';
                     styleClass="p-button-rounded p-button-danger p-button-text"
                     (click)="removeImage(i)"
                     [title]="'Fjern billede'">
+                  </p-button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="documents" class="p-label">Dokumenter</label>
+            <input 
+              type="file" 
+              id="documents" 
+              accept=".pdf,.doc,.docx,.txt,.xls,.xlsx"
+              multiple
+              (change)="onDocumentSelect($event)"
+              style="display: none;"
+              #documentInput
+            />
+            <div class="document-upload-section">
+              <p-button 
+                label="Vælg dokumenter" 
+                icon="pi pi-file"
+                styleClass="p-button-outlined"
+                (click)="documentInput.click()">
+              </p-button>
+              
+              <!-- Existing documents -->
+              <div class="document-list" *ngIf="existingDocuments.length > 0">
+                <div class="document-item existing" *ngFor="let doc of existingDocuments">
+                  <i class="pi pi-file" style="margin-right: 0.5rem;"></i>
+                  <span class="document-name">{{ doc.filename }}</span>
+                  <p-button 
+                    icon="pi pi-times" 
+                    styleClass="p-button-rounded p-button-danger p-button-text"
+                    (click)="removeExistingDocument(doc.id)"
+                    [title]="'Fjern dokument'">
+                  </p-button>
+                </div>
+              </div>
+              
+              <!-- New documents -->
+              <div class="document-list" *ngIf="selectedDocuments.length > 0">
+                <div class="document-item new" *ngFor="let doc of selectedDocuments; let i = index">
+                  <i class="pi pi-file" style="margin-right: 0.5rem;"></i>
+                  <span class="document-name">{{ doc.filename }}</span>
+                  <p-button 
+                    icon="pi pi-times" 
+                    styleClass="p-button-rounded p-button-danger p-button-text"
+                    (click)="removeDocument(i)"
+                    [title]="'Fjern dokument'">
                   </p-button>
                 </div>
               </div>
@@ -290,21 +367,21 @@ import { ToastModule } from 'primeng/toast';
       border-top: 1px solid var(--border-color, #e0e0e0);
     }
 
-    .category-select-wrapper {
+    .tag-select-wrapper {
       display: flex;
       gap: 0.5rem;
       align-items: flex-start;
     }
 
-    .category-select-wrapper ::ng-deep .p-select {
+    .tag-select-wrapper ::ng-deep .p-multiselect {
       flex: 1;
     }
 
-    .new-category-form {
+    .new-tag-form {
       margin-top: 1rem;
     }
 
-    .new-category-actions {
+    .new-tag-actions {
       display: flex;
       gap: 0.5rem;
       margin-top: 1rem;
@@ -354,23 +431,77 @@ import { ToastModule } from 'primeng/toast';
     .image-preview-item.new {
       border-color: var(--success-color, #28a745);
     }
+
+    .document-upload-section {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .document-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .document-item {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border-color, #e0e0e0);
+      border-radius: 0.5rem;
+      background: var(--surface, #ffffff);
+      transition: all 0.2s ease;
+    }
+
+    .document-item:hover {
+      background: var(--background, #f8fafc);
+      border-color: var(--primary-color, #007bff);
+    }
+
+    .document-item.existing {
+      border-color: var(--primary-color, #007bff);
+    }
+
+    .document-item.new {
+      border-color: var(--success-color, #28a745);
+    }
+
+    .document-name {
+      flex: 1;
+      color: var(--text-primary, #333);
+      font-size: 0.875rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .document-item i {
+      color: var(--text-secondary, #64748b);
+    }
   `]
 })
 export class ItemFormComponent implements OnInit {
   itemForm: FormGroup;
-  categories: Category[] = [];
+  tags: Tag[] = [];
+  places: Place[] = [];
   isEditMode = false;
   itemId: number | null = null;
   submitting = false;
-  showNewCategoryForm = false;
-  newCategoryName = '';
-  newCategoryDescription = '';
-  creatingCategory = false;
+  showNewTagForm = false;
+  newTagName = '';
+  newTagDescription = '';
+  creatingTag = false;
   selectedImages: { file: File; preview: string; base64: string }[] = [];
   existingImages: { id: number; image: string; preview: string }[] = [];
   imagesToRemove: number[] = [];
+  selectedDocuments: { file: File; filename: string; base64: string; content_type: string }[] = [];
+  existingDocuments: { id: number; filename: string; content_type?: string }[] = [];
+  documentsToRemove: number[] = [];
 
-  categoryOptions: { id: number; name: string }[] = [];
+  tagOptions: { id: number; name: string }[] = [];
+  placeOptions: { id: number; name: string }[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -382,15 +513,26 @@ export class ItemFormComponent implements OnInit {
   ) {
     this.itemForm = this.fb.group({
       name: ['', Validators.required],
-      category_id: ['', Validators.required],
+      tags: [[], [Validators.required, this.arrayNotEmptyValidator]],
       description: [''],
       serial_number: [''],
-      price: [null]
+      price: [null],
+      purchase_date: [null],
+      place: [null]
     });
   }
 
+  arrayNotEmptyValidator(control: any) {
+    const value = control.value;
+    if (!value || !Array.isArray(value) || value.length === 0) {
+      return { required: true };
+    }
+    return null;
+  }
+
   ngOnInit(): void {
-    this.loadCategories();
+    this.loadTags();
+    this.loadPlaces();
     
     const itemIdParam = this.route.snapshot.paramMap.get('id');
     if (itemIdParam) {
@@ -400,19 +542,37 @@ export class ItemFormComponent implements OnInit {
     }
   }
 
-  loadCategories(): void {
-    this.itemsService.getCategories().subscribe({
-      next: (categories) => {
-        this.categories = categories;
-        this.categoryOptions = categories.map(cat => ({ id: cat.id!, name: cat.name }));
+  loadTags(): void {
+    this.itemsService.getTags().subscribe({
+      next: (tags) => {
+        this.tags = tags;
+        this.tagOptions = tags.map(tag => ({ id: tag.id!, name: tag.name }));
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Error loading categories:', err);
+        console.error('Error loading tags:', err);
         this.messageService.add({
           severity: 'error',
           summary: 'Fejl',
-          detail: 'Kunne ikke hente kategorier'
+          detail: 'Kunne ikke hente tags'
+        });
+      }
+    });
+  }
+
+  loadPlaces(): void {
+    this.itemsService.getPlaces().subscribe({
+      next: (places) => {
+        this.places = places;
+        this.placeOptions = places.map(place => ({ id: place.id, name: place.name }));
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error loading places:', err);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Fejl',
+          detail: 'Kunne ikke hente placeringer'
         });
       }
     });
@@ -421,15 +581,25 @@ export class ItemFormComponent implements OnInit {
   loadItem(itemId: number): void {
     this.itemsService.getItem(itemId).subscribe({
       next: (item) => {
+        // Convert purchase_date string to YYYY-MM-DD format for HTML date input
+        let purchaseDate = null;
+        if (item.purchase_date) {
+          const date = new Date(item.purchase_date);
+          purchaseDate = date.toISOString().split('T')[0]; // Get YYYY-MM-DD format
+        }
+        
         this.itemForm.patchValue({
           name: item.name,
-          category_id: item.category_id,
+          tags: item.tags || [],
           description: item.description || '',
           serial_number: item.serial_number || '',
-          price: item.price || null
+          price: item.price || null,
+          purchase_date: purchaseDate,
+          place: item.place || null
         });
-        // Load existing images
+        // Load existing images and documents
         this.loadExistingImages(itemId);
+        this.loadExistingDocuments(itemId);
       },
       error: (err) => {
         console.error('Error loading item:', err);
@@ -491,24 +661,84 @@ export class ItemFormComponent implements OnInit {
     this.selectedImages.splice(index, 1);
   }
 
+  loadExistingDocuments(itemId: number): void {
+    this.itemsService.getDocuments(itemId).subscribe({
+      next: (documents) => {
+        this.existingDocuments = documents.map(doc => ({
+          id: doc.id,
+          filename: doc.filename,
+          content_type: doc.content_type
+        }));
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error loading documents:', err);
+        // Don't show error, just continue without documents
+      }
+    });
+  }
+
+  removeExistingDocument(documentId: number): void {
+    // Add to removal list
+    this.documentsToRemove.push(documentId);
+    // Remove from display
+    this.existingDocuments = this.existingDocuments.filter(doc => doc.id !== documentId);
+  }
+
+  onDocumentSelect(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      Array.from(input.files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e: ProgressEvent<FileReader>) => {
+          const base64 = e.target?.result as string;
+          this.selectedDocuments.push({
+            file: file,
+            filename: file.name,
+            base64: base64,
+            content_type: file.type || 'application/octet-stream'
+          });
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  }
+
+  removeDocument(index: number): void {
+    this.selectedDocuments.splice(index, 1);
+  }
+
   onSubmit(): void {
     if (this.itemForm.valid) {
       this.submitting = true;
       const formValue = this.itemForm.value;
+      
+      // purchase_date is already in YYYY-MM-DD format from HTML date input
+      const purchaseDate: string | undefined = formValue.purchase_date || undefined;
+      
       const item: Item = {
         name: formValue.name,
-        category_id: parseInt(formValue.category_id, 10),
+        tags: formValue.tags || [],
         description: formValue.description || undefined,
         serial_number: formValue.serial_number || undefined,
         price: formValue.price ? parseFloat(formValue.price) : undefined,
-        tags: [],
-        images: this.selectedImages.map(img => img.base64)
+        purchase_date: purchaseDate,
+        place: formValue.place || undefined,
+        images: this.selectedImages.map(img => img.base64),
+        documents: this.selectedDocuments.map(doc => ({
+          document: doc.base64,
+          filename: doc.filename,
+          content_type: doc.content_type
+        }))
       };
 
       if (this.isEditMode && this.itemId) {
-        // Include images to remove in edit mode
+        // Include images and documents to remove in edit mode
         if (this.imagesToRemove.length > 0) {
           item.images_to_remove = this.imagesToRemove;
+        }
+        if (this.documentsToRemove.length > 0) {
+          item.documents_to_remove = this.documentsToRemove;
         }
         this.itemsService.updateItem(this.itemId, item).subscribe({
           next: () => {
@@ -553,49 +783,50 @@ export class ItemFormComponent implements OnInit {
     }
   }
 
-  createNewCategory(): void {
-    if (!this.newCategoryName.trim()) {
+  createNewTag(): void {
+    if (!this.newTagName.trim()) {
       return;
     }
 
-    this.creatingCategory = true;
-    const categoryData = {
-      name: this.newCategoryName.trim(),
-      description: this.newCategoryDescription.trim() || undefined
+    this.creatingTag = true;
+    const tagData = {
+      name: this.newTagName.trim(),
+      description: this.newTagDescription.trim() || undefined
     };
 
-    this.itemsService.createCategory(categoryData).subscribe({
-      next: (newCategory) => {
-        // Add the new category to the list
-        this.categories.push(newCategory);
-        this.categoryOptions.push({ id: newCategory.id!, name: newCategory.name });
-        // Set it as selected
-        this.itemForm.patchValue({ category_id: newCategory.id });
+    this.itemsService.createTag(tagData).subscribe({
+      next: (newTag) => {
+        // Add the new tag to the list
+        this.tags.push(newTag);
+        this.tagOptions.push({ id: newTag.id!, name: newTag.name });
+        // Add it to the selected tags
+        const currentTags = this.itemForm.get('tags')?.value || [];
+        this.itemForm.patchValue({ tags: [...currentTags, newTag.id] });
         // Reset and hide the form
-        this.cancelNewCategory();
-        this.creatingCategory = false;
+        this.cancelNewTag();
+        this.creatingTag = false;
         this.messageService.add({
           severity: 'success',
           summary: 'Oprettet',
-          detail: 'Kategori er blevet oprettet'
+          detail: 'Tag er blevet oprettet'
         });
       },
       error: (err) => {
-        console.error('Error creating category:', err);
+        console.error('Error creating tag:', err);
         this.messageService.add({
           severity: 'error',
           summary: 'Fejl',
-          detail: 'Kunne ikke oprette kategori. Prøv igen senere.'
+          detail: 'Kunne ikke oprette tag. Prøv igen senere.'
         });
-        this.creatingCategory = false;
+        this.creatingTag = false;
       }
     });
   }
 
-  cancelNewCategory(): void {
-    this.showNewCategoryForm = false;
-    this.newCategoryName = '';
-    this.newCategoryDescription = '';
+  cancelNewTag(): void {
+    this.showNewTagForm = false;
+    this.newTagName = '';
+    this.newTagDescription = '';
   }
 
   goBack(): void {

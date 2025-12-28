@@ -10,20 +10,37 @@ export interface ImageOut {
   image: string;
 }
 
+export interface DocumentOut {
+  id: number;
+  document: string;  // Base64 encoded document
+  filename: string;
+  content_type?: string;
+}
+
 export interface Item {
   id?: number;
   user_id?: number;
-  category_id: number;
   name: string;
   description?: string;
   serial_number?: string;
   price?: number;
-  tags?: number[];
+  purchase_date?: string;  // ISO date string (YYYY-MM-DD)
+  tags: number[];  // Required list of tag IDs
   images?: string[];  // Array of base64 encoded image strings (for new images)
   images_to_remove?: number[];  // Array of image IDs to remove (for updates)
+  documents?: Array<{document: string; filename: string; content_type?: string}>;  // Array of document objects (for new documents)
+  documents_to_remove?: number[];  // Array of document IDs to remove (for updates)
+  archived?: boolean;
+  place?: number;
 }
 
-export interface Category {
+export interface Tag {
+  id: number;
+  name: string;
+  description?: string;
+}
+
+export interface Place {
   id: number;
   name: string;
   description?: string;
@@ -60,10 +77,10 @@ export class ItemsService {
     );
   }
 
-  getItems(): Observable<Item[]> {
+  getItems(includeArchived: boolean = false): Observable<Item[]> {
     return this.getAuthHeaders().pipe(
       switchMap(headers => 
-        this.http.get<Item[]>(`${this.apiUrl}/items`, { headers })
+        this.http.get<Item[]>(`${this.apiUrl}/items?include_archived=${includeArchived}`, { headers })
       )
     );
   }
@@ -100,34 +117,82 @@ export class ItemsService {
     );
   }
 
-  getCategories(): Observable<Category[]> {
+  archiveItem(itemId: number): Observable<any> {
     return this.getAuthHeaders().pipe(
       switchMap(headers => 
-        this.http.get<Category[]>(`${this.apiUrl}/categories`, { headers })
+        this.http.post(`${this.apiUrl}/items/${itemId}/archive`, {}, { headers })
       )
     );
   }
 
-  createCategory(category: { name: string; description?: string }): Observable<Category> {
+  unarchiveItem(itemId: number): Observable<any> {
     return this.getAuthHeaders().pipe(
       switchMap(headers => 
-        this.http.post<Category>(`${this.apiUrl}/categories`, category, { headers })
+        this.http.post(`${this.apiUrl}/items/${itemId}/unarchive`, {}, { headers })
       )
     );
   }
 
-  updateCategory(categoryId: number, category: { name: string; description?: string }): Observable<Category> {
+  getTags(): Observable<Tag[]> {
     return this.getAuthHeaders().pipe(
       switchMap(headers => 
-        this.http.put<Category>(`${this.apiUrl}/categories/${categoryId}`, category, { headers })
+        this.http.get<Tag[]>(`${this.apiUrl}/tags`, { headers })
       )
     );
   }
 
-  deleteCategory(categoryId: number): Observable<any> {
+  createTag(tag: { name: string; description?: string }): Observable<Tag> {
     return this.getAuthHeaders().pipe(
       switchMap(headers => 
-        this.http.delete(`${this.apiUrl}/categories/${categoryId}`, { headers })
+        this.http.post<Tag>(`${this.apiUrl}/tags`, tag, { headers })
+      )
+    );
+  }
+
+  updateTag(tagId: number, tag: { name: string; description?: string }): Observable<Tag> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => 
+        this.http.put<Tag>(`${this.apiUrl}/tags/${tagId}`, tag, { headers })
+      )
+    );
+  }
+
+  deleteTag(tagId: number): Observable<any> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => 
+        this.http.delete(`${this.apiUrl}/tags/${tagId}`, { headers })
+      )
+    );
+  }
+
+  getPlaces(): Observable<Place[]> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => 
+        this.http.get<Place[]>(`${this.apiUrl}/places`, { headers })
+      )
+    );
+  }
+
+  createPlace(place: { name: string; description?: string }): Observable<Place> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => 
+        this.http.post<Place>(`${this.apiUrl}/places`, place, { headers })
+      )
+    );
+  }
+
+  updatePlace(placeId: number, place: { name: string; description?: string }): Observable<Place> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => 
+        this.http.put<Place>(`${this.apiUrl}/places/${placeId}`, place, { headers })
+      )
+    );
+  }
+
+  deletePlace(placeId: number): Observable<any> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => 
+        this.http.delete(`${this.apiUrl}/places/${placeId}`, { headers })
       )
     );
   }
@@ -136,6 +201,22 @@ export class ItemsService {
     return this.getAuthHeaders().pipe(
       switchMap(headers => 
         this.http.get<ImageOut[]>(`${this.apiUrl}/images/${itemId}`, { headers })
+      )
+    );
+  }
+
+  getDocuments(itemId: number): Observable<DocumentOut[]> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => 
+        this.http.get<DocumentOut[]>(`${this.apiUrl}/documents/${itemId}`, { headers })
+      )
+    );
+  }
+
+  deleteDocument(documentId: number): Observable<any> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => 
+        this.http.delete(`${this.apiUrl}/documents/${documentId}`, { headers })
       )
     );
   }

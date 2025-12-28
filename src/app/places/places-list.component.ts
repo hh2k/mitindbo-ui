@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { filter, take } from 'rxjs/operators';
 
-import { ItemsService, Tag, Item } from '../services/items.service';
+import { ItemsService, Place, Item } from '../services/items.service';
 import { AuthService } from '../services/auth.service';
 
 import { CardModule } from 'primeng/card';
@@ -21,7 +21,7 @@ import { TextareaModule } from 'primeng/textarea';
 import { FormsModule } from '@angular/forms';
 
 @Component({
-  selector: 'app-categories-list',
+  selector: 'app-places-list',
   standalone: true,
   imports: [
     CommonModule, 
@@ -44,11 +44,11 @@ import { FormsModule } from '@angular/forms';
     <p-toast></p-toast>
     <p-confirmDialog></p-confirmDialog>
     
-    <div class="categories-container">
-      <div class="categories-content">
+    <div class="places-container">
+      <div class="places-content">
         <div *ngIf="loading" class="loading-container">
           <p-progressSpinner></p-progressSpinner>
-          <p>Henter tags...</p>
+          <p>Henter placeringer...</p>
         </div>
         
         <p-message 
@@ -58,10 +58,10 @@ import { FormsModule } from '@angular/forms';
           [closable]="true">
         </p-message>
 
-        <p-card *ngIf="!loading && !error && tags.length > 0" class="table-card">
+        <p-card *ngIf="!loading && !error && places.length > 0" class="table-card">
           <ng-template pTemplate="header">
             <div class="table-header">
-              <h2>Tags ({{ tags.length }})</h2>
+              <h2>Placeringer ({{ places.length }})</h2>
               <div class="table-controls">
                 <span class="p-input-icon-left">
                   <i class="pi pi-search"></i>
@@ -73,7 +73,7 @@ import { FormsModule } from '@angular/forms';
                     class="search-input" />
                 </span>
                 <p-button 
-                  label="Tilføj Tag" 
+                  label="Tilføj Placering" 
                   icon="pi pi-plus" 
                   (click)="showAddDialog()"
                   styleClass="p-button-primary">
@@ -83,14 +83,14 @@ import { FormsModule } from '@angular/forms';
           </ng-template>
           
           <p-table 
-            [value]="filteredTags" 
+            [value]="filteredPlaces" 
             [paginator]="true" 
             [rows]="10"
             [sortMode]="'multiple'"
             class="p-datatable-striped p-datatable-gridlines"
             [tableStyle]="{'min-width': '50rem'}"
             [showCurrentPageReport]="true"
-            currentPageReportTemplate="Viser {first} til {last} af {totalRecords} tags">
+            currentPageReportTemplate="Viser {first} til {last} af {totalRecords} placeringer">
             
             <ng-template pTemplate="header">
               <tr>
@@ -105,16 +105,16 @@ import { FormsModule } from '@angular/forms';
               </tr>
             </ng-template>
             
-            <ng-template pTemplate="body" let-tag>
+            <ng-template pTemplate="body" let-place>
               <tr>
                 <td>
-                  <strong class="category-name">{{ tag.name }}</strong>
+                  <strong class="place-name">{{ place.name }}</strong>
                 </td>
                 <td>
-                  <span class="category-description">{{ tag.description || '-' }}</span>
+                  <span class="place-description">{{ place.description || '-' }}</span>
                 </td>
                 <td style="text-align: center;">
-                  <span class="item-count">{{ getItemCountForTag(tag.id!) }}</span>
+                  <span class="item-count">{{ getItemCountForPlace(place.id) }}</span>
                 </td>
                 <td class="actions-cell">
                   <div class="action-buttons">
@@ -123,7 +123,7 @@ import { FormsModule } from '@angular/forms';
                       [rounded]="true" 
                       [text]="true"
                       [severity]="'secondary'"
-                      (click)="editTag(tag)" 
+                      (click)="editPlace(place)" 
                       pTooltip="Rediger"
                       tooltipPosition="top"
                       styleClass="action-btn">
@@ -133,7 +133,7 @@ import { FormsModule } from '@angular/forms';
                       [rounded]="true" 
                       [text]="true"
                       [severity]="'danger'"
-                      (click)="deleteTag(tag.id!)" 
+                      (click)="deletePlace(place.id)" 
                       pTooltip="Slet"
                       tooltipPosition="top"
                       styleClass="action-btn">
@@ -148,7 +148,7 @@ import { FormsModule } from '@angular/forms';
                 <td colspan="4" class="empty-table-message">
                   <div class="empty-table-content">
                     <i class="pi pi-inbox" style="font-size: 3rem; color: var(--text-secondary);"></i>
-                    <p>Ingen tags fundet</p>
+                    <p>Ingen placeringer fundet</p>
                   </div>
                 </td>
               </tr>
@@ -156,12 +156,12 @@ import { FormsModule } from '@angular/forms';
           </p-table>
         </p-card>
 
-        <p-card *ngIf="!loading && !error && tags.length === 0" class="empty-state">
+        <p-card *ngIf="!loading && !error && places.length === 0" class="empty-state">
           <div class="empty-state-content">
             <i class="pi pi-inbox" style="font-size: 4rem; color: var(--text-secondary); margin-bottom: 1rem;"></i>
-            <p>Du har ingen tags endnu.</p>
+            <p>Du har ingen placeringer endnu.</p>
             <p-button 
-              label="Tilføj tag" 
+              label="Tilføj placering" 
               icon="pi pi-plus" 
               (click)="showAddDialog()"
               styleClass="p-button-primary">
@@ -174,31 +174,31 @@ import { FormsModule } from '@angular/forms';
     <!-- Add/Edit Dialog -->
     <p-dialog 
       [(visible)]="showDialog" 
-      [header]="isEditMode ? 'Rediger Tag' : 'Tilføj Tag'"
+      [header]="isEditMode ? 'Rediger Placering' : 'Tilføj Placering'"
       [modal]="true"
       [style]="{width: '500px'}"
       [closable]="true"
       (onHide)="closeDialog()">
       <div class="dialog-content">
         <div class="form-group">
-          <label for="tagName" class="p-label">Navn *</label>
+          <label for="placeName" class="p-label">Navn *</label>
           <input 
             type="text" 
-            id="tagName" 
+            id="placeName" 
             pInputText
-            [(ngModel)]="editingTag.name"
-            [class.ng-invalid]="!editingTag.name || editingTag.name.trim() === ''"
-            placeholder="F.eks. Elektronik, Møbler, etc."
+            [(ngModel)]="editingPlace.name"
+            [class.ng-invalid]="!editingPlace.name || editingPlace.name.trim() === ''"
+            placeholder="F.eks. Stue, Køkken, Garage, etc."
             class="w-full" />
         </div>
         <div class="form-group">
-          <label for="tagDescription" class="p-label">Beskrivelse</label>
+          <label for="placeDescription" class="p-label">Beskrivelse</label>
           <textarea 
-            id="tagDescription" 
+            id="placeDescription" 
             pTextarea
-            [(ngModel)]="editingTag.description"
+            [(ngModel)]="editingPlace.description"
             [rows]="4"
-            placeholder="Beskrivelse af taggen"
+            placeholder="Beskrivelse af placeringen"
             class="w-full">
           </textarea>
         </div>
@@ -214,21 +214,21 @@ import { FormsModule } from '@angular/forms';
           [label]="submitting ? 'Gemmer...' : (isEditMode ? 'Opdater' : 'Opret')" 
           icon="pi pi-check"
           styleClass="p-button-primary"
-          (click)="saveTag()"
-          [disabled]="!editingTag.name || editingTag.name.trim() === '' || submitting"
+          (click)="savePlace()"
+          [disabled]="!editingPlace.name || editingPlace.name.trim() === '' || submitting"
           [loading]="submitting">
         </p-button>
       </ng-template>
     </p-dialog>
   `,
   styles: [`
-    .categories-container {
+    .places-container {
       min-height: 100vh;
       padding: 2rem;
       background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
     }
 
-    .categories-content {
+    .places-content {
       max-width: 1400px;
       margin: 0 auto;
     }
@@ -348,13 +348,13 @@ import { FormsModule } from '@angular/forms';
       background-color: var(--background, #f8fafc);
     }
 
-    .category-name {
+    .place-name {
       font-weight: 600;
       color: var(--text-primary, #1e293b);
       font-size: 0.95rem;
     }
 
-    .category-description {
+    .place-description {
       color: var(--text-secondary, #64748b);
       font-size: 0.875rem;
       line-height: 1.5;
@@ -491,7 +491,7 @@ import { FormsModule } from '@angular/forms';
 
     /* Responsive design */
     @media (max-width: 768px) {
-      .categories-container {
+      .places-container {
         padding: 1rem;
       }
 
@@ -537,16 +537,16 @@ import { FormsModule } from '@angular/forms';
     }
   `]
 })
-export class CategoriesListComponent implements OnInit {
-  tags: Tag[] = [];
-  filteredTags: Tag[] = [];
+export class PlacesListComponent implements OnInit {
+  places: Place[] = [];
+  filteredPlaces: Place[] = [];
   items: Item[] = [];
   loading: boolean = false;
   error: string | null = null;
   globalFilter: string = '';
   showDialog: boolean = false;
   isEditMode: boolean = false;
-  editingTag: { id?: number; name: string; description?: string } = { name: '', description: '' };
+  editingPlace: { id?: number; name: string; description?: string } = { name: '', description: '' };
   submitting: boolean = false;
 
   constructor(
@@ -559,34 +559,34 @@ export class CategoriesListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Wait for authentication to be ready before loading tags
+    // Wait for authentication to be ready before loading places
     this.authService.isAuthenticated$.pipe(
       filter(isAuthenticated => isAuthenticated === true),
       take(1)
     ).subscribe(() => {
-      this.loadTags();
+      this.loadPlaces();
       this.loadItems();
     });
   }
 
-  loadTags(): void {
+  loadPlaces(): void {
     this.loading = true;
     this.error = null;
     this.cdr.detectChanges();
     
-    this.itemsService.getTags().subscribe({
-      next: (tags) => {
-        console.log('Tags loaded successfully:', tags);
-        this.tags = tags || [];
-        this.filteredTags = [...this.tags];
+    this.itemsService.getPlaces().subscribe({
+      next: (places) => {
+        console.log('Places loaded successfully:', places);
+        this.places = places || [];
+        this.filteredPlaces = [...this.places];
         this.loading = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Error loading tags:', err);
-        this.error = err.error?.detail || err.message || 'Kunne ikke hente tags. Prøv igen senere.';
-        this.tags = [];
-        this.filteredTags = [];
+        console.error('Error loading places:', err);
+        this.error = err.error?.detail || err.message || 'Kunne ikke hente placeringer. Prøv igen senere.';
+        this.places = [];
+        this.filteredPlaces = [];
         this.loading = false;
         this.cdr.detectChanges();
       }
@@ -607,28 +607,28 @@ export class CategoriesListComponent implements OnInit {
     });
   }
 
-  getItemCountForTag(tagId: number): number {
+  getItemCountForPlace(placeId: number): number {
     if (!this.items || this.items.length === 0) {
       return 0;
     }
-    // Count items that have this tag in their tags array
+    // Count items that have this place
     return this.items.filter(item => 
-      item.tags && item.tags.includes(tagId)
+      item.place === placeId
     ).length;
   }
 
   showAddDialog(): void {
     this.isEditMode = false;
-    this.editingTag = { name: '', description: '' };
+    this.editingPlace = { name: '', description: '' };
     this.showDialog = true;
   }
 
-  editTag(tag: Tag): void {
+  editPlace(place: Place): void {
     this.isEditMode = true;
-    this.editingTag = {
-      id: tag.id,
-      name: tag.name,
-      description: tag.description || ''
+    this.editingPlace = {
+      id: place.id,
+      name: place.name,
+      description: place.description || ''
     };
     this.showDialog = true;
   }
@@ -636,64 +636,64 @@ export class CategoriesListComponent implements OnInit {
   closeDialog(): void {
     this.showDialog = false;
     this.isEditMode = false;
-    this.editingTag = { name: '', description: '' };
+    this.editingPlace = { name: '', description: '' };
     this.submitting = false;
   }
 
-  saveTag(): void {
-    if (!this.editingTag.name || this.editingTag.name.trim() === '') {
+  savePlace(): void {
+    if (!this.editingPlace.name || this.editingPlace.name.trim() === '') {
       return;
     }
 
     this.submitting = true;
-    const tagData = {
-      name: this.editingTag.name.trim(),
-      description: this.editingTag.description?.trim() || undefined
+    const placeData = {
+      name: this.editingPlace.name.trim(),
+      description: this.editingPlace.description?.trim() || undefined
     };
 
-    if (this.isEditMode && this.editingTag.id) {
-      this.itemsService.updateTag(this.editingTag.id, tagData).subscribe({
-        next: (updatedTag) => {
-          const index = this.tags.findIndex(t => t.id === updatedTag.id);
+    if (this.isEditMode && this.editingPlace.id) {
+      this.itemsService.updatePlace(this.editingPlace.id, placeData).subscribe({
+        next: (updatedPlace) => {
+          const index = this.places.findIndex(p => p.id === updatedPlace.id);
           if (index !== -1) {
-            this.tags[index] = updatedTag;
-            this.filteredTags = [...this.tags];
+            this.places[index] = updatedPlace;
+            this.filteredPlaces = [...this.places];
           }
           this.messageService.add({
             severity: 'success',
             summary: 'Opdateret',
-            detail: 'Tag er blevet opdateret'
+            detail: 'Placering er blevet opdateret'
           });
           this.closeDialog();
         },
         error: (err) => {
-          console.error('Error updating tag:', err);
+          console.error('Error updating place:', err);
           this.messageService.add({
             severity: 'error',
             summary: 'Fejl',
-            detail: 'Kunne ikke opdatere tag. Prøv igen senere.'
+            detail: 'Kunne ikke opdatere placering. Prøv igen senere.'
           });
           this.submitting = false;
         }
       });
     } else {
-      this.itemsService.createTag(tagData).subscribe({
-        next: (newTag) => {
-          this.tags.push(newTag);
-          this.filteredTags = [...this.tags];
+      this.itemsService.createPlace(placeData).subscribe({
+        next: (newPlace) => {
+          this.places.push(newPlace);
+          this.filteredPlaces = [...this.places];
           this.messageService.add({
             severity: 'success',
             summary: 'Oprettet',
-            detail: 'Tag er blevet oprettet'
+            detail: 'Placering er blevet oprettet'
           });
           this.closeDialog();
         },
         error: (err) => {
-          console.error('Error creating tag:', err);
+          console.error('Error creating place:', err);
           this.messageService.add({
             severity: 'error',
             summary: 'Fejl',
-            detail: 'Kunne ikke oprette tag. Prøv igen senere.'
+            detail: 'Kunne ikke oprette placering. Prøv igen senere.'
           });
           this.submitting = false;
         }
@@ -701,30 +701,30 @@ export class CategoriesListComponent implements OnInit {
     }
   }
 
-  deleteTag(tagId: number): void {
+  deletePlace(placeId: number): void {
     this.confirmationService.confirm({
-      message: 'Er du sikker på, at du vil slette denne tag?',
+      message: 'Er du sikker på, at du vil slette denne placering?',
       header: 'Bekræft sletning',
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Ja',
       rejectLabel: 'Nej',
       accept: () => {
-        this.itemsService.deleteTag(tagId).subscribe({
+        this.itemsService.deletePlace(placeId).subscribe({
           next: () => {
-            this.tags = this.tags.filter(t => t.id !== tagId);
-            this.filteredTags = [...this.tags];
+            this.places = this.places.filter(p => p.id !== placeId);
+            this.filteredPlaces = [...this.places];
             this.messageService.add({
               severity: 'success',
               summary: 'Slettet',
-              detail: 'Tag er blevet slettet'
+              detail: 'Placering er blevet slettet'
             });
           },
           error: (err) => {
-            console.error('Error deleting tag:', err);
+            console.error('Error deleting place:', err);
             this.messageService.add({
               severity: 'error',
               summary: 'Fejl',
-              detail: 'Kunne ikke slette tag. Prøv igen senere.'
+              detail: 'Kunne ikke slette placering. Prøv igen senere.'
             });
           }
         });
@@ -737,15 +737,15 @@ export class CategoriesListComponent implements OnInit {
     this.globalFilter = value;
     
     if (!value || value.trim() === '') {
-      this.filteredTags = [...this.tags];
+      this.filteredPlaces = [...this.places];
       return;
     }
 
     const searchTerm = value.toLowerCase().trim();
-    this.filteredTags = this.tags.filter(tag => {
+    this.filteredPlaces = this.places.filter(place => {
       return (
-        tag.name?.toLowerCase().includes(searchTerm) ||
-        tag.description?.toLowerCase().includes(searchTerm)
+        place.name?.toLowerCase().includes(searchTerm) ||
+        place.description?.toLowerCase().includes(searchTerm)
       );
     });
   }
