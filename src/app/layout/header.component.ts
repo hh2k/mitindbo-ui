@@ -23,28 +23,36 @@ import { ButtonModule } from 'primeng/button';
             Mit Indbo
           </h1>
         </div>
-        <nav class="header-nav" *ngIf="isAuthenticated$ | async">
-          <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">
-            <i class="pi pi-th-large"></i>
-            <span>Dashboard</span>
-          </a>
-          <a routerLink="/items" routerLinkActive="active" class="nav-link">
-            <i class="pi pi-list"></i>
-            <span>Indbo</span>
-          </a>
-          <a routerLink="/profile" routerLinkActive="active" class="nav-link">
-            <i class="pi pi-user"></i>
-            <span>Profil</span>
-          </a>
-        </nav>
-        <div class="header-right" *ngIf="isAuthenticated$ | async">
+        @if (isAuthenticated$ | async) {
+          <nav class="header-nav">
+            <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">
+              <i class="pi pi-th-large"></i>
+              <span>Dashboard</span>
+            </a>
+            <a routerLink="/items" routerLinkActive="active" class="nav-link">
+              <i class="pi pi-list"></i>
+              <span>Indbo</span>
+            </a>
+            <a routerLink="/categories" routerLinkActive="active" class="nav-link">
+              <i class="pi pi-tags"></i>
+              <span>Kategorier</span>
+            </a>
+            <a routerLink="/profile" routerLinkActive="active" class="nav-link">
+              <i class="pi pi-user"></i>
+              <span>Profil</span>
+            </a>
+          </nav>
+        }
+        @if (isAuthenticated$ | async) {
+          <div class="header-right">
           <p-button 
             label="Log ud" 
             icon="pi pi-sign-out" 
             styleClass="p-button-text p-button-secondary"
             (click)="logout()">
           </p-button>
-        </div>
+          </div>
+        }
       </div>
     </header>
   `,

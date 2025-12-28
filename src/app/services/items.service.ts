@@ -6,7 +6,7 @@ import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
 
 export interface ImageOut {
-  image_id: number;
+  id: number;
   image: string;
 }
 
@@ -19,7 +19,8 @@ export interface Item {
   serial_number?: string;
   price?: number;
   tags?: number[];
-  images?: ImageOut[];
+  images?: string[];  // Array of base64 encoded image strings (for new images)
+  images_to_remove?: number[];  // Array of image IDs to remove (for updates)
 }
 
 export interface Category {
@@ -111,6 +112,30 @@ export class ItemsService {
     return this.getAuthHeaders().pipe(
       switchMap(headers => 
         this.http.post<Category>(`${this.apiUrl}/categories`, category, { headers })
+      )
+    );
+  }
+
+  updateCategory(categoryId: number, category: { name: string; description?: string }): Observable<Category> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => 
+        this.http.put<Category>(`${this.apiUrl}/categories/${categoryId}`, category, { headers })
+      )
+    );
+  }
+
+  deleteCategory(categoryId: number): Observable<any> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => 
+        this.http.delete(`${this.apiUrl}/categories/${categoryId}`, { headers })
+      )
+    );
+  }
+
+  getImages(itemId: number): Observable<ImageOut[]> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => 
+        this.http.get<ImageOut[]>(`${this.apiUrl}/images/${itemId}`, { headers })
       )
     );
   }
