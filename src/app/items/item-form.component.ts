@@ -2,9 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
-
 import { ItemsService, Item, Tag, Place, DocumentOut } from '../services/items.service';
-
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -317,9 +315,9 @@ import { ToastModule } from 'primeng/toast';
   styles: [`
     .form-container {
       min-height: 100vh;
-      padding: 2rem;
-      background: var(--background, #f5f5f5);
-      max-width: 800px;
+      padding: var(--spacing-xl);
+      background: var(--background);
+      max-width: 900px;
       margin: 0 auto;
     }
 
@@ -327,22 +325,23 @@ import { ToastModule } from 'primeng/toast';
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 1rem;
+      padding: var(--spacing-lg) var(--spacing-xl);
     }
 
     .form-header h1 {
       font-size: 2rem;
       font-weight: 700;
-      color: var(--text-primary, #333);
+      color: var(--text-primary);
       margin: 0;
+      letter-spacing: -0.02em;
     }
 
     .item-form {
-      padding: 1rem;
+      padding: var(--spacing-xl);
     }
 
     .form-group {
-      margin-bottom: 1.5rem;
+      margin-bottom: var(--spacing-lg);
     }
 
     .form-row {
@@ -361,10 +360,10 @@ import { ToastModule } from 'primeng/toast';
     .form-actions {
       display: flex;
       justify-content: flex-end;
-      gap: 1rem;
-      margin-top: 2rem;
-      padding-top: 1.5rem;
-      border-top: 1px solid var(--border-color, #e0e0e0);
+      gap: var(--spacing-md);
+      margin-top: var(--spacing-xl);
+      padding-top: var(--spacing-lg);
+      border-top: 1px solid var(--border-light);
     }
 
     .tag-select-wrapper {
@@ -429,7 +428,7 @@ import { ToastModule } from 'primeng/toast';
     }
 
     .image-preview-item.new {
-      border-color: var(--success-color, #28a745);
+      border-color: var(--primary-300);
     }
 
     .document-upload-section {
@@ -465,7 +464,7 @@ import { ToastModule } from 'primeng/toast';
     }
 
     .document-item.new {
-      border-color: var(--success-color, #28a745);
+      border-color: var(--primary-300);
     }
 
     .document-name {

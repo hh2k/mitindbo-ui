@@ -2,26 +2,25 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { filter, take } from 'rxjs/operators';
-
 import { ItemsService, Tag, Item } from '../services/items.service';
 import { AuthService } from '../services/auth.service';
-
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { MessageModule } from 'primeng/message';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService, MenuItem } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { TableModule } from 'primeng/table';
 import { InputTextModule } from 'primeng/inputtext';
 import { DialogModule } from 'primeng/dialog';
 import { TextareaModule } from 'primeng/textarea';
+import { MenuModule } from 'primeng/menu';
 import { FormsModule } from '@angular/forms';
 
 @Component({
-  selector: 'app-categories-list',
+  selector: 'app-tags-list',
   standalone: true,
   imports: [
     CommonModule, 
@@ -37,15 +36,16 @@ import { FormsModule } from '@angular/forms';
     TableModule,
     InputTextModule,
     DialogModule,
-    TextareaModule
+    TextareaModule,
+    MenuModule
   ],
   providers: [ConfirmationService, MessageService],
   template: `
     <p-toast></p-toast>
     <p-confirmDialog></p-confirmDialog>
     
-    <div class="categories-container">
-      <div class="categories-content">
+    <div class="tags-container">
+      <div class="tags-content">
         <div *ngIf="loading" class="loading-container">
           <p-progressSpinner></p-progressSpinner>
           <p>Henter tags...</p>
@@ -100,45 +100,40 @@ import { FormsModule } from '@angular/forms';
                 <th pSortableColumn="description" style="width: 40%">
                   Beskrivelse <p-sortIcon field="description"></p-sortIcon>
                 </th>
-                <th style="width: 15%; text-align: center;">Antal indbo</th>
-                <th style="width: 20%; text-align: center;">Handlinger</th>
+                <th style="width: 15%; text-align: center;">Indbo</th>
+                <th style="width: 4%; text-align: center;"></th>
               </tr>
             </ng-template>
             
             <ng-template pTemplate="body" let-tag>
               <tr>
                 <td>
-                  <strong class="category-name">{{ tag.name }}</strong>
+                  <strong class="tag-name">{{ tag.name }}</strong>
                 </td>
                 <td>
-                  <span class="category-description">{{ tag.description || '-' }}</span>
+                  <span class="tag-description">{{ tag.description || '-' }}</span>
                 </td>
                 <td style="text-align: center;">
                   <span class="item-count">{{ getItemCountForTag(tag.id!) }}</span>
                 </td>
                 <td class="actions-cell">
-                  <div class="action-buttons">
-                    <p-button 
-                      icon="pi pi-pencil" 
-                      [rounded]="true" 
-                      [text]="true"
-                      [severity]="'secondary'"
-                      (click)="editTag(tag)" 
-                      pTooltip="Rediger"
-                      tooltipPosition="top"
-                      styleClass="action-btn">
-                    </p-button>
-                    <p-button 
-                      icon="pi pi-trash" 
-                      [rounded]="true" 
-                      [text]="true"
-                      [severity]="'danger'"
-                      (click)="deleteTag(tag.id!)" 
-                      pTooltip="Slet"
-                      tooltipPosition="top"
-                      styleClass="action-btn">
-                    </p-button>
-                  </div>
+                  <p-button 
+                    #menuBtn
+                    icon="pi pi-ellipsis-v" 
+                    [rounded]="true" 
+                    [text]="true"
+                    [severity]="'secondary'"
+                    (click)="actionMenu.toggle($event)"
+                    pTooltip="Handlinger"
+                    tooltipPosition="top"
+                    styleClass="action-menu-btn">
+                  </p-button>
+                  <p-menu 
+                    #actionMenu 
+                    [model]="getActionMenuItems(tag)" 
+                    [popup]="true"
+                    [appendTo]="'body'">
+                  </p-menu>
                 </td>
               </tr>
             </ng-template>
@@ -222,13 +217,13 @@ import { FormsModule } from '@angular/forms';
     </p-dialog>
   `,
   styles: [`
-    .categories-container {
+    .tags-container {
       min-height: 100vh;
-      padding: 2rem;
-      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      padding: var(--spacing-xl);
+      background: var(--background);
     }
 
-    .categories-content {
+    .tags-content {
       max-width: 1400px;
       margin: 0 auto;
     }
@@ -253,10 +248,15 @@ import { FormsModule } from '@angular/forms';
     }
 
     .table-card ::ng-deep .p-card {
-      border-radius: 1rem;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-      border: 1px solid var(--border-color, #e2e8f0);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
       overflow: hidden;
+      transition: all var(--transition-base);
+    }
+
+    .table-card ::ng-deep .p-card:hover {
+      box-shadow: var(--shadow-md);
     }
 
     .table-header {
@@ -294,7 +294,7 @@ import { FormsModule } from '@angular/forms';
     .search-input:focus {
       outline: none;
       border-color: var(--primary-color, #6366f1);
-      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+      box-shadow: 0 0 0 3px rgba(55, 65, 81, 0.1);
     }
 
     .p-input-icon-left {
@@ -316,14 +316,14 @@ import { FormsModule } from '@angular/forms';
     }
 
     ::ng-deep .p-datatable .p-datatable-thead > tr > th {
-      background: linear-gradient(135deg, var(--primary-color, #6366f1) 0%, var(--secondary-color, #8b5cf6) 100%);
+      background: var(--primary-color);
       color: white;
-      font-weight: 600;
-      padding: 1rem;
+      font-weight: 700;
+      padding: var(--spacing-lg) var(--spacing-md);
       border: none;
       text-transform: uppercase;
       font-size: 0.75rem;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.08em;
     }
 
     ::ng-deep .p-datatable .p-datatable-tbody > tr {
@@ -341,20 +341,20 @@ import { FormsModule } from '@angular/forms';
     }
 
     ::ng-deep .p-datatable-striped .p-datatable-tbody > tr:nth-child(even) {
-      background-color: rgba(99, 102, 241, 0.02);
+      background-color: rgba(55, 65, 81, 0.02);
     }
 
     ::ng-deep .p-datatable-striped .p-datatable-tbody > tr:nth-child(even):hover {
       background-color: var(--background, #f8fafc);
     }
 
-    .category-name {
+    .tag-name {
       font-weight: 600;
       color: var(--text-primary, #1e293b);
       font-size: 0.95rem;
     }
 
-    .category-description {
+    .tag-description {
       color: var(--text-secondary, #64748b);
       font-size: 0.875rem;
       line-height: 1.5;
@@ -371,7 +371,7 @@ import { FormsModule } from '@angular/forms';
       justify-content: center;
       min-width: 2rem;
       padding: 0.25rem 0.5rem;
-      background: rgba(99, 102, 241, 0.1);
+      background: rgba(55, 65, 81, 0.1);
       color: var(--primary-color, #6366f1);
       border-radius: 1rem;
       font-size: 0.875rem;
@@ -380,21 +380,14 @@ import { FormsModule } from '@angular/forms';
 
     .actions-cell {
       text-align: center;
+      padding: 0.75rem 0.5rem;
     }
 
-    .action-buttons {
-      display: flex;
-      gap: 0.5rem;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .action-btn {
-      transition: transform 0.2s ease;
-    }
-
-    .action-btn:hover {
-      transform: scale(1.1);
+    .action-menu-btn {
+      width: 2rem;
+      height: 2rem;
+      padding: 0;
+      font-size: 0.875rem;
     }
 
     .empty-table-message {
@@ -455,7 +448,7 @@ import { FormsModule } from '@angular/forms';
     }
 
     ::ng-deep .p-paginator .p-paginator-pages .p-paginator-page.p-highlight {
-      background: linear-gradient(135deg, var(--primary-color, #6366f1) 0%, var(--secondary-color, #8b5cf6) 100%);
+      background: var(--primary-color);
       color: white;
     }
 
@@ -491,7 +484,7 @@ import { FormsModule } from '@angular/forms';
 
     /* Responsive design */
     @media (max-width: 768px) {
-      .categories-container {
+      .tags-container {
         padding: 1rem;
       }
 
@@ -537,7 +530,7 @@ import { FormsModule } from '@angular/forms';
     }
   `]
 })
-export class CategoriesListComponent implements OnInit {
+export class TagsListComponent implements OnInit {
   tags: Tag[] = [];
   filteredTags: Tag[] = [];
   items: Item[] = [];
@@ -631,6 +624,27 @@ export class CategoriesListComponent implements OnInit {
       description: tag.description || ''
     };
     this.showDialog = true;
+  }
+
+  getActionMenuItems(tag: Tag): MenuItem[] {
+    return [
+      {
+        label: 'Rediger',
+        icon: 'pi pi-pencil',
+        command: () => {
+          this.editTag(tag);
+        }
+      },
+      {
+        label: 'Slet',
+        icon: 'pi pi-trash',
+        command: () => {
+          if (tag.id) {
+            this.deleteTag(tag.id);
+          }
+        }
+      }
+    ];
   }
 
   closeDialog(): void {

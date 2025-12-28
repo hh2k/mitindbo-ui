@@ -2,23 +2,22 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { filter, take } from 'rxjs/operators';
-
 import { ItemsService, Item, Tag, Place } from '../services/items.service';
 import { AuthService } from '../services/auth.service';
-
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { MessageModule } from 'primeng/message';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService, MenuItem } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { TableModule } from 'primeng/table';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { CheckboxModule } from 'primeng/checkbox';
+import { MenuModule } from 'primeng/menu';
 import { FormsModule } from '@angular/forms';
 
 @Component({
@@ -39,7 +38,8 @@ import { FormsModule } from '@angular/forms';
     TableModule,
     InputTextModule,
     SelectModule,
-    CheckboxModule
+    CheckboxModule,
+    MenuModule
   ],
   providers: [ConfirmationService, MessageService],
   template: `
@@ -61,70 +61,67 @@ import { FormsModule } from '@angular/forms';
         </p-message>
 
         <div *ngIf="!loading && !error && items.length > 0" class="items-header">
-          <div class="header-content">
-            <div class="header-title-section">
+          <div class="header-top">
+            <div class="header-left-section">
               <div class="title-row">
-                <div class="count-badge-square">{{ filteredItems.length }}</div>
-                <h1 class="page-title">Indbo</h1>
+                <div class="count-badge">{{ filteredItems.length }}</div>
+                <div class="title-group">
+                  <h1 class="page-title">Indbo</h1>
+                  <p class="page-subtitle">Administrer dine ejendele</p>
+                </div>
               </div>
-              <p class="page-subtitle">Administrer dine ejendele</p>
             </div>
-            <div class="header-actions">
+            <div class="header-right-section">
               <p-button 
                 label="Tilføj Indbo" 
                 icon="pi pi-plus" 
                 [routerLink]="['/items/new']"
-                styleClass="p-button-success add-button">
+                styleClass="p-button-primary">
               </p-button>
             </div>
           </div>
           
-          <div class="filters-section">
-            <div class="filters-container">
-              <div class="search-half">
-                <span class="p-input-icon-left search-wrapper">
-                  <input 
-                    type="text" 
-                    pInputText 
-                    placeholder="Søg efter navn, beskrivelse eller serienummer..." 
-                    (input)="onGlobalFilter($event)"
-                    class="filter-input" />
-                </span>
-              </div>
-              
-              <div class="actions-half">
-                <p-select
-                  [(ngModel)]="selectedTagId"
-                  [options]="tagOptions"
-                  optionLabel="name"
-                  optionValue="id"
-                  placeholder="Alle tags"
-                  [showClear]="true"
-                  (onChange)="onTagFilter()"
-                  [appendTo]="'body'"
-                  styleClass="filter-select">
-                </p-select>
-                
-                <div class="show-archived-checkbox">
-                  <p-checkbox 
-                    [(ngModel)]="showArchived"
-                    [binary]="true"
-                    inputId="showArchived"
-                    (onChange)="onShowArchivedChange()"
-                    [ngModelOptions]="{standalone: true}">
-                  </p-checkbox>
-                  <label for="showArchived" class="checkbox-label">Vis arkiverede</label>
-                </div>
-                
-                <p-button 
-                  label="Eksporter" 
-                  icon="pi pi-download" 
-                  styleClass="p-button-outlined export-button"
-                  (click)="exportItems()"
-                  [disabled]="filteredItems.length === 0">
-                </p-button>
-              </div>
+          <div class="filters-row">
+            <div class="search-wrapper">
+              <i class="pi pi-search"></i>
+              <input 
+                type="text" 
+                pInputText 
+                placeholder="Søg efter navn, beskrivelse eller serienummer..." 
+                (input)="onGlobalFilter($event)"
+                class="search-input" />
             </div>
+            
+            <p-select
+              [(ngModel)]="selectedTagId"
+              [options]="tagOptions"
+              optionLabel="name"
+              optionValue="id"
+              placeholder="Alle kategorier"
+              [showClear]="true"
+              (onChange)="onTagFilter()"
+              [appendTo]="'body'"
+              styleClass="filter-select">
+            </p-select>
+            
+            <div class="checkbox-wrapper">
+              <p-checkbox 
+                [(ngModel)]="showArchived"
+                [binary]="true"
+                inputId="showArchived"
+                (onChange)="onShowArchivedChange()"
+                [ngModelOptions]="{standalone: true}">
+              </p-checkbox>
+              <label for="showArchived">Arkiverede</label>
+            </div>
+            
+            <p-button 
+              icon="pi pi-download" 
+              label="Eksporter"
+              styleClass="p-button-outlined export-btn"
+              (click)="exportItems()"
+              [disabled]="filteredItems.length === 0">
+            </p-button>
           </div>
         </div>
 
@@ -135,6 +132,7 @@ import { FormsModule } from '@angular/forms';
             [paginator]="true" 
             [rows]="10"
             [sortMode]="'multiple'"
+            [multiSortMeta]="multiSortMeta"
             styleClass="p-datatable-striped p-datatable-gridlines"
             [scrollable]="false"
             [showCurrentPageReport]="true"
@@ -161,7 +159,7 @@ import { FormsModule } from '@angular/forms';
                 <th pSortableColumn="purchase_date" style="width: 9%">
                   Købsdato <p-sortIcon field="purchase_date"></p-sortIcon>
                 </th>
-                <th style="width: 8%; text-align: center;">Handlinger</th>
+                <th style="width: 4%; text-align: center;"></th>
               </tr>
             </ng-template>
             
@@ -207,38 +205,23 @@ import { FormsModule } from '@angular/forms';
                   <span *ngIf="!item.purchase_date" class="no-date">-</span>
                 </td>
                 <td class="actions-cell">
-                  <div class="action-buttons">
-                    <p-button 
-                      icon="pi pi-pencil" 
-                      [rounded]="true" 
-                      [text]="true"
-                      [severity]="'secondary'"
-                      (click)="editItem(item.id!)" 
-                      pTooltip="Rediger"
-                      tooltipPosition="top"
-                      styleClass="action-btn">
-                    </p-button>
-                    <p-button 
-                      icon="pi pi-folder" 
-                      [rounded]="true" 
-                      [text]="true"
-                      [severity]="'info'"
-                      (click)="archiveItem(item.id!)" 
-                      pTooltip="Arkiver"
-                      tooltipPosition="top"
-                      styleClass="action-btn">
-                    </p-button>
-                    <p-button 
-                      icon="pi pi-trash" 
-                      [rounded]="true" 
-                      [text]="true"
-                      [severity]="'danger'"
-                      (click)="deleteItem(item.id!)" 
-                      pTooltip="Slet"
-                      tooltipPosition="top"
-                      styleClass="action-btn">
-                    </p-button>
-                  </div>
+                  <p-button 
+                    #menuBtn
+                    icon="pi pi-ellipsis-v" 
+                    [rounded]="true" 
+                    [text]="true"
+                    [severity]="'secondary'"
+                    (click)="actionMenu.toggle($event)"
+                    pTooltip="Handlinger"
+                    tooltipPosition="top"
+                    styleClass="action-menu-btn">
+                  </p-button>
+                  <p-menu 
+                    #actionMenu 
+                    [model]="getActionMenuItems(item)" 
+                    [popup]="true"
+                    [appendTo]="'body'">
+                  </p-menu>
                 </td>
               </tr>
             </ng-template>
@@ -275,7 +258,7 @@ import { FormsModule } from '@angular/forms';
     .items-container {
       min-height: 100vh;
       padding: 0;
-      background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+      background: var(--background);
       overflow-x: hidden;
       width: 100%;
       max-width: 100vw;
@@ -284,209 +267,209 @@ import { FormsModule } from '@angular/forms';
     .items-content {
       max-width: 1600px;
       margin: 0 auto;
-      padding: 2rem;
+      padding: var(--spacing-xl);
       overflow-x: hidden;
     }
 
     .items-header {
-      margin-bottom: 1.5rem;
-      background: var(--surface, #ffffff);
-      border-radius: 0.75rem;
-      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+      margin-bottom: var(--spacing-lg);
+      background: var(--surface);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
       overflow: hidden;
-      border: 1px solid var(--border-color, #e2e8f0);
     }
 
-    .header-content {
+    .header-top {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      padding: 1.5rem 2rem;
+      align-items: flex-start;
+      padding: var(--spacing-xl);
     }
 
-    .header-title-section {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
+    .header-left-section {
+      flex: 1;
     }
 
     .title-row {
       display: flex;
-      align-items: center;
-      gap: 1rem;
+      align-items: flex-start;
+      gap: var(--spacing-md);
     }
 
-    .count-badge-square {
+    .count-badge {
       display: flex;
       align-items: center;
       justify-content: center;
       width: 3rem;
       height: 3rem;
-      background: linear-gradient(135deg, var(--primary-color, #6366f1) 0%, var(--secondary-color, #8b5cf6) 100%);
+      background: var(--primary-color);
       color: white;
-      border-radius: 0.75rem;
+      border-radius: var(--radius-md);
       font-weight: 700;
       font-size: 1.25rem;
-      box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3);
+      flex-shrink: 0;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
     }
 
     .page-title {
-      font-size: 2rem;
+      font-size: 1.75rem;
       font-weight: 700;
       margin: 0;
-      color: var(--text-primary, #1e293b);
-      display: flex;
-      align-items: center;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
     }
 
     .page-subtitle {
-      font-size: 0.95rem;
-      color: var(--text-secondary, #64748b);
-      margin: 0;
-      margin-left: 4rem;
-    }
-
-    .header-actions {
-      display: flex;
-      gap: 1rem;
-    }
-
-    .add-button {
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-      background: var(--success-color, #10b981) !important;
-      border-color: var(--success-color, #10b981) !important;
-    }
-
-    .add-button:hover {
-      background: var(--success-color, #059669) !important;
-      border-color: var(--success-color, #059669) !important;
-    }
-
-    .filters-section {
-      padding: 1.5rem 2rem;
-      background: var(--surface, #ffffff);
-      border-top: 1px solid var(--border-color, #e2e8f0);
-      overflow: visible;
-      position: relative;
-      z-index: 100;
-    }
-
-    .filters-container {
-      display: flex;
-      gap: 0.75rem;
-      align-items: center;
-    }
-
-    .search-half {
-      flex: 0 0 50%;
-      display: flex;
-      align-items: center;
-    }
-
-    .actions-half {
-      flex: 0 0 50%;
-      display: flex;
-      gap: 0.75rem;
-      align-items: center;
-      justify-content: flex-end;
-    }
-
-    .show-archived-checkbox {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      white-space: nowrap;
-    }
-
-    .checkbox-label {
       font-size: 0.875rem;
-      color: var(--text-primary, #1e293b);
-      cursor: pointer;
-      user-select: none;
+      color: var(--text-secondary);
+      margin: 0;
+      font-weight: 400;
+    }
+
+    .header-right-section {
+      display: flex;
+      align-items: center;
+    }
+
+    .filters-row {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      padding: var(--spacing-lg) var(--spacing-xl);
+      background: var(--background);
+      border-top: 1px solid var(--border-light);
+      flex-wrap: wrap;
     }
 
     .search-wrapper {
       position: relative;
-      width: 100%;
-    }
-
-    .search-wrapper .p-input-icon-left {
-      width: 100%;
-    }
-
-    .filter-input {
-      width: 100%;
-      padding: 0.375rem 0.75rem 0.375rem 2.25rem;
-      border: 1px solid var(--border-color, #e2e8f0);
-      border-radius: 0.5rem;
-      font-size: 0.875rem;
-      transition: all 0.2s ease;
-      background: var(--surface, #ffffff);
+      width: 300px;
       height: 2.5rem;
     }
 
-    .filter-input:focus {
-      outline: none;
-      border-color: var(--primary-color, #6366f1);
-      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-    }
-
-    .search-wrapper .p-input-icon-left i {
+    .search-wrapper i {
       position: absolute;
-      left: 0.75rem;
+      left: 0.875rem;
       top: 50%;
       transform: translateY(-50%);
-      color: var(--text-secondary, #64748b);
-      z-index: 1;
+      color: var(--text-tertiary);
       font-size: 0.875rem;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .search-input {
+      width: 100%;
+      height: 2.5rem;
+      padding: 0 0.875rem 0 2.5rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      transition: all var(--transition-base);
+      background: var(--surface);
+      box-sizing: border-box;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(55, 65, 81, 0.1);
     }
 
     .filter-select {
-      flex: 1;
-      min-width: 150px;
-      height: 2.5rem !important;
+      width: 180px;
+      height: 2.5rem;
+    }
+
+    .filter-select ::ng-deep .p-select {
+      width: 100%;
+      height: 2.5rem;
+    }
+
+    .filter-select ::ng-deep .p-select .p-select-label {
+      height: 2.5rem;
+      min-height: 2.5rem;
+      padding: 0 0.875rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      transition: all var(--transition-base);
+      font-weight: 500;
+      font-size: 0.875rem;
+      display: flex;
+      align-items: center;
+      box-sizing: border-box;
+      background: var(--surface);
+      color: var(--text-primary);
+    }
+
+    .filter-select ::ng-deep .p-select:not(.p-disabled):hover .p-select-label {
+      border-color: var(--primary-color);
+      background: var(--primary-50);
+    }
+
+    .filter-select ::ng-deep .p-select.p-focus .p-select-label {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(55, 65, 81, 0.1);
+    }
+
+    .checkbox-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      white-space: nowrap;
+      height: 2.5rem;
+      padding: 0 0.75rem;
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      box-sizing: border-box;
+    }
+
+    .checkbox-wrapper ::ng-deep .p-checkbox {
+      width: 1.125rem;
+      height: 1.125rem;
+    }
+
+    .checkbox-wrapper ::ng-deep .p-checkbox .p-checkbox-box {
+      width: 1.125rem;
+      height: 1.125rem;
+      border: 1px solid var(--border-color);
+    }
+
+    .checkbox-wrapper label {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      user-select: none;
+      font-weight: 400;
+      margin: 0;
+      line-height: 1;
+    }
+
+    .export-btn {
+      height: 2.5rem;
+    }
+
+    .export-btn ::ng-deep .p-button {
+      height: 2.5rem;
+      min-height: 2.5rem;
+      padding: 0 0.875rem;
+      font-size: 0.875rem;
+      border: 1px solid var(--border-color);
     }
 
     ::ng-deep .p-select {
       padding: 0;
     }
 
-    .filter-select ::ng-deep .p-select {
-      width: 100%;
-      height: 100%;
-    }
-
-    .filter-select ::ng-deep .p-select .p-select-label {
-      padding: 0.375rem 1rem;
-      border: 1px solid var(--border-color, #e2e8f0);
-      border-radius: 0.5rem;
-      transition: all 0.2s ease;
-      font-weight: 500;
-      font-size: 0.875rem;
-      line-height: 1;
-      height: 100%;
-      min-height: 2.5rem;
-      display: flex;
-      align-items: center;
-      box-sizing: border-box;
-    }
-
-    .filter-select ::ng-deep .p-select:not(.p-disabled):hover .p-select-label {
-      border-color: var(--primary-color, #6366f1);
-      background: var(--primary-color, #6366f1);
-      color: white;
-      transform: translateY(-1px);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .filter-select ::ng-deep .p-select:not(.p-disabled):hover .p-select-label .p-select-trigger-icon {
-      color: white;
-    }
-
-    .filter-select ::ng-deep .p-select.p-focus .p-select-label {
-      border-color: var(--primary-color, #6366f1);
-      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-    }
 
     .loading-container {
       display: flex;
@@ -505,15 +488,20 @@ import { FormsModule } from '@angular/forms';
 
     .table-card {
       margin-bottom: 0;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+      box-shadow: var(--shadow-sm);
       overflow: visible;
     }
 
     .table-card ::ng-deep .p-card {
-      border-radius: 1rem;
-      border: none;
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border-color);
       overflow: visible;
-      background: var(--surface, #ffffff);
+      background: var(--surface);
+      transition: all var(--transition-base);
+    }
+
+    .table-card ::ng-deep .p-card:hover {
+      box-shadow: var(--shadow-md);
     }
 
     .table-card ::ng-deep .p-card-body {
@@ -523,29 +511,6 @@ import { FormsModule } from '@angular/forms';
 
 
 
-    .export-button {
-      height: 2.5rem !important;
-      padding: 0.375rem 1rem;
-      border: 1px solid var(--border-color, #e2e8f0);
-      border-radius: 0.5rem;
-      font-weight: 500;
-      font-size: 0.875rem;
-      transition: all 0.2s ease;
-      line-height: 1;
-    }
-
-    .export-button ::ng-deep .p-button {
-      height: 100%;
-      padding: 0.375rem 1rem;
-    }
-
-    .export-button:hover:not(:disabled) {
-      border-color: var(--primary-color, #6366f1);
-      background: var(--primary-color, #6366f1);
-      color: white;
-      transform: translateY(-1px);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
 
     /* Table styling */
     ::ng-deep .p-datatable {
@@ -589,14 +554,14 @@ import { FormsModule } from '@angular/forms';
     }
 
     ::ng-deep .p-datatable .p-datatable-thead > tr > th {
-      background: linear-gradient(135deg, var(--primary-color, #6366f1) 0%, var(--secondary-color, #8b5cf6) 100%);
+      background: var(--primary-color);
       color: white;
-      font-weight: 600;
-      padding: 1.25rem 1rem;
+      font-weight: 700;
+      padding: var(--spacing-lg) var(--spacing-md);
       border: none;
       text-transform: uppercase;
       font-size: 0.75rem;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.08em;
       position: sticky;
       top: 0;
       z-index: 10;
@@ -613,7 +578,7 @@ import { FormsModule } from '@angular/forms';
     }
 
     ::ng-deep .p-datatable-striped .p-datatable-tbody > tr:nth-child(even) {
-      background-color: rgba(99, 102, 241, 0.02);
+      background-color: rgba(55, 65, 81, 0.02);
     }
 
     .item-name-container {
@@ -632,6 +597,12 @@ import { FormsModule } from '@angular/forms';
 
     .archived-tag {
       font-size: 0.75rem;
+    }
+
+    .archived-tag ::ng-deep .p-tag {
+      background: var(--primary-200);
+      color: var(--primary-dark);
+      border: 1px solid var(--primary-300);
     }
 
     .item-description {
@@ -660,7 +631,7 @@ import { FormsModule } from '@angular/forms';
 
     .price-value {
       font-weight: 600;
-      color: var(--success-color, #10b981);
+      color: var(--primary-color);
       font-size: 0.95rem;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
@@ -688,29 +659,34 @@ import { FormsModule } from '@angular/forms';
       font-size: 0.75rem;
     }
 
+    .item-tag ::ng-deep .p-tag {
+      background: var(--primary-100);
+      color: var(--primary-color);
+      border: 1px solid var(--primary-200);
+    }
+
     .actions-cell {
       text-align: center;
+      padding: 0.75rem 0.5rem !important;
     }
 
-    .action-buttons {
-      display: flex;
-      gap: 0.75rem;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .action-btn {
-      transition: all 0.2s ease;
-      width: 2.5rem;
-      height: 2.5rem;
+    .action-menu-btn {
+      width: 2rem;
+      height: 2rem;
+      min-width: 2rem;
+      padding: 0;
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
-    .action-btn:hover {
-      transform: scale(1.15);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    .action-menu-btn ::ng-deep .p-button-icon {
+      font-size: 0.875rem;
+    }
+
+    .action-menu-btn:hover {
+      background: var(--background-alt);
+      transform: scale(1.05);
     }
 
     .empty-table-message {
@@ -771,7 +747,7 @@ import { FormsModule } from '@angular/forms';
     }
 
     ::ng-deep .p-paginator .p-paginator-pages .p-paginator-page.p-highlight {
-      background: linear-gradient(135deg, var(--primary-color, #6366f1) 0%, var(--secondary-color, #8b5cf6) 100%);
+      background: var(--primary-color);
       color: white;
     }
 
@@ -788,45 +764,50 @@ import { FormsModule } from '@angular/forms';
     /* Responsive design */
     @media (max-width: 768px) {
       .items-content {
-        padding: 1rem;
+        padding: var(--spacing-md);
       }
 
-      .header-content {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1.5rem;
-      }
-
-      .filters-container {
+      .header-top {
         flex-direction: column;
         align-items: stretch;
+        gap: var(--spacing-md);
+        padding: var(--spacing-lg);
       }
 
-      .search-half {
-        flex: 0 0 100%;
+      .header-left-section {
         width: 100%;
       }
 
-      .actions-half {
-        flex: 0 0 100%;
+      .header-right-section {
         width: 100%;
+      }
+
+      .header-right-section ::ng-deep .p-button {
+        width: 100%;
+      }
+
+      .filters-row {
         flex-direction: column;
         align-items: stretch;
-        justify-content: flex-start;
-      }
-
-      .show-archived-checkbox {
-        width: 100%;
-        justify-content: flex-start;
+        gap: var(--spacing-sm);
+        padding: var(--spacing-md);
       }
 
       .search-wrapper {
+        max-width: 100%;
         width: 100%;
       }
 
       .filter-select {
+        width: 100%;
         min-width: unset;
-        max-width: unset;
+      }
+
+      .checkbox-wrapper {
+        width: 100%;
+      }
+
+      .filters-row ::ng-deep .p-button {
         width: 100%;
       }
 
@@ -878,6 +859,7 @@ export class ItemsListComponent implements OnInit {
   loading: boolean = false;
   error: string | null = null;
   globalFilter: string = '';
+  multiSortMeta: any[] = [{ field: 'name', order: 1 }];
 
   constructor(
     private itemsService: ItemsService,
@@ -972,6 +954,43 @@ export class ItemsListComponent implements OnInit {
     this.router.navigate(['/items', itemId, 'edit']);
   }
 
+  getActionMenuItems(item: Item): MenuItem[] {
+    return [
+      {
+        label: 'Rediger',
+        icon: 'pi pi-pencil',
+        command: () => {
+          if (item.id) {
+            this.editItem(item.id);
+          }
+        }
+      },
+      {
+        label: item.archived ? 'Gendan' : 'Arkiver',
+        icon: item.archived ? 'pi pi-folder-open' : 'pi pi-folder',
+        command: () => {
+          if (item.id) {
+            if (item.archived) {
+              this.unarchiveItem(item.id);
+            } else {
+              this.archiveItem(item.id);
+            }
+          }
+        }
+      },
+      {
+        label: 'Slet',
+        icon: 'pi pi-trash',
+        command: () => {
+          if (item.id) {
+            this.deleteItem(item.id);
+          }
+        }
+      }
+    ];
+  }
+
+
   deleteItem(itemId: number): void {
     this.confirmationService.confirm({
       message: 'Er du sikker på, at du vil slette dette indbo?',
@@ -1025,6 +1044,36 @@ export class ItemsListComponent implements OnInit {
               severity: 'error',
               summary: 'Fejl',
               detail: 'Kunne ikke arkivere indbo. Prøv igen senere.'
+            });
+          }
+        });
+      }
+    });
+  }
+
+  unarchiveItem(itemId: number): void {
+    this.confirmationService.confirm({
+      message: 'Er du sikker på, at du vil gendanne dette indbo? Det vil blive vist i listen igen.',
+      header: 'Bekræft gendannelse',
+      icon: 'pi pi-folder-open',
+      acceptLabel: 'Ja',
+      rejectLabel: 'Nej',
+      accept: () => {
+        this.itemsService.unarchiveItem(itemId).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Gendannet',
+              detail: 'Indbo er blevet gendannet'
+            });
+            this.loadItems();
+          },
+          error: (err) => {
+            console.error('Error unarchiving item:', err);
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Fejl',
+              detail: 'Kunne ikke gendanne indbo. Prøv igen senere.'
             });
           }
         });

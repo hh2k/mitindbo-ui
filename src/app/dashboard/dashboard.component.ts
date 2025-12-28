@@ -2,14 +2,14 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { ItemsService, Item } from '../services/items.service';
+import { ItemsService, Item, Tag, Place } from '../services/items.service';
 import { Observable } from 'rxjs';
 import { filter, take } from 'rxjs/operators';
-
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { MessageModule } from 'primeng/message';
+import { TagModule } from 'primeng/tag';
 
 @Component({
   selector: 'app-dashboard',
@@ -20,127 +20,132 @@ import { MessageModule } from 'primeng/message';
     CardModule,
     ButtonModule,
     ProgressSpinnerModule,
-    MessageModule
+    MessageModule,
+    TagModule
   ],
   template: `
     <div class="dashboard-container">
       <div class="dashboard-content">
         <p-card class="stats-section">
-          <ng-template pTemplate="header">
-            <h2>Indbo Statistikker</h2>
-          </ng-template>
-          
-          <div *ngIf="loading" class="loading-container">
-            <p-progressSpinner></p-progressSpinner>
-            <p>Henter data...</p>
-          </div>
-          
-          <p-message 
-            *ngIf="error" 
-            severity="error" 
-            [text]="error"
-            [closable]="true">
-          </p-message>
-          
-          <div *ngIf="!loading && !error" class="stats-content">
-            <div *ngIf="items.length === 0" class="empty-state">
-              <p>Du har ingen indbo endnu.</p>
-              <p-button 
-                label="Tilføj dit første indbo" 
-                icon="pi pi-plus" 
-                [routerLink]="['/items/new']"
-                styleClass="p-button-primary">
-              </p-button>
+          @if (loading) {
+            <div class="loading-container">
+              <p-progressSpinner></p-progressSpinner>
+              <p>Henter data...</p>
             </div>
-            <div *ngIf="items.length > 0" class="stats-grid">
-              <p-card class="stat-card">
-                <div class="stat-value">{{ totalItems }}</div>
-                <div class="stat-label">Total Indbo</div>
-              </p-card>
-              <p-card class="stat-card">
-                <div class="stat-value">{{ totalValue | number:'1.2-2' }} kr.</div>
-                <div class="stat-label">Total Værdi</div>
-              </p-card>
-              <p-card class="stat-card">
-                <div class="stat-value">{{ itemsWithPrice }}</div>
-                <div class="stat-label">Med Pris</div>
-              </p-card>
-              <p-card class="stat-card">
-                <div class="stat-value">{{ itemsWithSerial }}</div>
-                <div class="stat-label">Med Serienummer</div>
-              </p-card>
+          }
+          
+          @if (error) {
+            <p-message 
+              severity="error" 
+              [text]="error"
+              [closable]="true">
+            </p-message>
+          }
+          
+          @if (!loading && !error) {
+            <div class="stats-content">
+              @if (items.length === 0) {
+                <div class="empty-state">
+                  <p>Du har ikke oprettet noget indbo endnu.</p>
+                  <p-button 
+                    label="Tilføj indbo" 
+                    icon="pi pi-plus" 
+                    [routerLink]="['/items/new']"
+                    styleClass="p-button-primary">
+                  </p-button>
+                </div>
+              }
+              @if (items.length > 0) {
+                <div class="stats-grid">
+                  <p-card class="stat-card">
+                    <div class="stat-value">{{ totalItems }}</div>
+                    <div class="stat-label">Total Indbo</div>
+                  </p-card>
+                  <p-card class="stat-card">
+                    <div class="stat-value">{{ totalValue | number:'1.2-2' }} kr.</div>
+                    <div class="stat-label">Total Værdi</div>
+                  </p-card>
+                </div>
+              }
             </div>
-          </div>
+          }
         </p-card>
 
-        <p-card *ngIf="!loading && !error && recentItems.length > 0" class="recent-items">
+        @if (!loading && !error && recentItems.length > 0) {
+          <p-card class="recent-items">
           <ng-template pTemplate="header">
-            <h2>Seneste Indbo</h2>
+            <h2>Seneste</h2>
           </ng-template>
-          <div class="items-list">
-            <div *ngFor="let item of recentItems" class="item-summary">
-              <div class="item-name">{{ item.name }}</div>
-              <div class="item-meta">
-                <span *ngIf="item.price">{{ item.price | number:'1.2-2' }} kr.</span>
-                <span *ngIf="item.serial_number">SN: {{ item.serial_number }}</span>
-              </div>
+            <div class="items-list">
+              @for (item of recentItems; track item.id) {
+                <div class="item-summary" [routerLink]="item.id ? ['/items', item.id, 'edit'] : []" [class.clickable]="item.id">
+                  <div class="item-header">
+                    <div class="item-name">{{ item.name }}</div>
+                    @if (item.price) {
+                      <div class="item-price">{{ item.price | number:'1.2-2' }} kr.</div>
+                    }
+                  </div>
+                  @if (item.description) {
+                    <div class="item-description">{{ item.description }}</div>
+                  }
+                  <div class="item-details">
+                    <div class="item-meta-row">
+                      @if (item.tags && item.tags.length > 0) {
+                        <div class="item-tags">
+                          @for (tagId of item.tags; track tagId) {
+                            <p-tag [value]="getTagName(tagId)" severity="secondary" [style]="{'margin-right': '0.5rem', 'margin-bottom': '0.25rem'}"></p-tag>
+                          }
+                        </div>
+                      }
+                    </div>
+                    <div class="item-meta-row">
+                      @if (item.place) {
+                        <div class="item-place">
+                          <i class="pi pi-map-marker"></i>
+                          <span>{{ getPlaceName(item.place) }}</span>
+                        </div>
+                      }
+                      @if (item.serial_number) {
+                        <div class="item-serial">
+                          <i class="pi pi-barcode"></i>
+                          <span>{{ item.serial_number }}</span>
+                        </div>
+                      }
+                      @if (item.purchase_date) {
+                        <div class="item-date">
+                          <i class="pi pi-calendar"></i>
+                          <span>{{ formatDate(item.purchase_date) }}</span>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
             </div>
-          </div>
-          <p-button 
-            label="Se Indbo" 
-            icon="pi pi-list" 
-            [routerLink]="['/items']"
-            styleClass="p-button-primary">
-          </p-button>
-        </p-card>
+            <p-button 
+              label="Se Indbo" 
+              icon="pi pi-list" 
+              [routerLink]="['/items']"
+              styleClass="p-button-primary">
+            </p-button>
+          </p-card>
+        }
       </div>
     </div>
   `,
   styles: [`
     .dashboard-container {
       min-height: 100vh;
-      padding: 2rem;
-      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-    }
-
-    .dashboard-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2.5rem;
-      padding: 1.5rem 2rem;
-      background: var(--surface, #ffffff);
-      border-radius: 1rem;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-      transition: box-shadow 0.3s ease;
-    }
-
-    .dashboard-header:hover {
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-    }
-
-    .dashboard-header h1 {
-      font-size: 2.25rem;
-      font-weight: 700;
-      background: linear-gradient(135deg, var(--primary-color, #6366f1) 0%, var(--secondary-color, #8b5cf6) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin: 0;
-      letter-spacing: -0.5px;
-    }
-
-    .header-actions {
-      display: flex;
-      gap: 1rem;
+      padding: var(--spacing-xl);
+      background: var(--background);
     }
 
     .dashboard-content {
-      max-width: 1200px;
+      max-width: 1400px;
       margin: 0 auto;
       display: flex;
       flex-direction: column;
-      gap: 2rem;
+      gap: var(--spacing-xl);
     }
 
     .user-info {
@@ -161,7 +166,7 @@ import { MessageModule } from 'primeng/message';
     }
 
     .user-info ::ng-deep .p-card-header {
-      background: linear-gradient(135deg, var(--primary-color, #6366f1) 0%, var(--secondary-color, #8b5cf6) 100%);
+      color: var(--primary-color);
       color: white;
       padding: 1.25rem 1.5rem;
       border-bottom: none;
@@ -200,23 +205,29 @@ import { MessageModule } from 'primeng/message';
     }
 
     .stats-section ::ng-deep .p-card {
-      border-radius: 1rem;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-      border: 1px solid var(--border-color, #e2e8f0);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
       overflow: hidden;
+      transition: all var(--transition-base);
+    }
+
+    .stats-section ::ng-deep .p-card:hover {
+      box-shadow: var(--shadow-md);
     }
 
     .stats-section ::ng-deep .p-card-header {
-      background: var(--surface, #ffffff);
-      padding: 1.25rem 1.5rem;
-      border-bottom: 2px solid var(--border-color, #e2e8f0);
+      background: var(--surface);
+      padding: var(--spacing-lg) var(--spacing-xl);
+      border-bottom: 1px solid var(--border-light);
     }
 
     .stats-section h2 {
-      font-size: 1.25rem;
+      font-size: 1.375rem;
       margin: 0;
-      color: var(--text-primary, #1e293b);
-      font-weight: 600;
+      color: var(--text-primary);
+      font-weight: 700;
+      letter-spacing: -0.02em;
     }
 
     .loading-container {
@@ -224,14 +235,15 @@ import { MessageModule } from 'primeng/message';
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 4rem 2rem;
-      gap: 1.5rem;
+      padding: var(--spacing-3xl) var(--spacing-xl);
+      gap: var(--spacing-lg);
     }
 
     .loading-container p {
-      color: var(--text-secondary, #64748b);
+      color: var(--text-secondary);
       font-size: 1rem;
       margin: 0;
+      font-weight: 500;
     }
 
     .stats-content {
@@ -240,51 +252,67 @@ import { MessageModule } from 'primeng/message';
 
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1.5rem;
-      padding: 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: var(--spacing-lg);
+      padding: var(--spacing-xl);
     }
 
     .stat-card {
       text-align: center;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      border-radius: 0.75rem;
+      transition: all var(--transition-base);
+      border-radius: var(--radius-lg);
       overflow: hidden;
+      position: relative;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--primary-color);
+      transform: scaleX(0);
+      transition: transform var(--transition-base);
     }
 
     .stat-card:hover {
       transform: translateY(-4px);
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .stat-card:hover::before {
+      transform: scaleX(1);
     }
 
     .stat-card ::ng-deep .p-card {
-      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-      border: 1px solid var(--border-color, #e2e8f0);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-xs);
       height: 100%;
+      transition: all var(--transition-base);
     }
 
     .stat-card ::ng-deep .p-card-body {
-      padding: 2rem 1.5rem;
+      padding: var(--spacing-xl) var(--spacing-lg);
     }
 
     .stat-value {
-      font-size: 2.5rem;
-      font-weight: 700;
-      background: linear-gradient(135deg, var(--primary-color, #6366f1) 0%, var(--secondary-color, #8b5cf6) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 0.75rem;
-      line-height: 1.2;
+      font-size: 2.75rem;
+      font-weight: 800;
+      color: var(--primary-color);
+      margin-bottom: var(--spacing-sm);
+      line-height: 1.1;
+      letter-spacing: -0.03em;
     }
 
     .stat-label {
-      font-size: 0.875rem;
-      color: var(--text-secondary, #64748b);
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
       text-transform: uppercase;
-      letter-spacing: 1px;
-      font-weight: 500;
+      letter-spacing: 0.05em;
+      font-weight: 600;
     }
 
     .recent-items {
@@ -292,153 +320,197 @@ import { MessageModule } from 'primeng/message';
     }
 
     .recent-items ::ng-deep .p-card {
-      border-radius: 1rem;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-      border: 1px solid var(--border-color, #e2e8f0);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
       overflow: hidden;
+      transition: all var(--transition-base);
+    }
+
+    .recent-items ::ng-deep .p-card:hover {
+      box-shadow: var(--shadow-md);
     }
 
     .recent-items ::ng-deep .p-card-header {
-      background: var(--surface, #ffffff);
-      padding: 1.25rem 1.5rem;
-      border-bottom: 2px solid var(--border-color, #e2e8f0);
+      background: var(--surface);
+      padding: var(--spacing-lg) var(--spacing-xl);
+      border-bottom: 1px solid var(--border-light);
     }
 
     .recent-items h2 {
-      font-size: 1.25rem;
+      font-size: 1.375rem;
       margin: 0;
-      color: var(--text-primary, #1e293b);
-      font-weight: 600;
+      color: var(--text-primary);
+      font-weight: 700;
+      letter-spacing: -0.02em;
     }
 
     .recent-items ::ng-deep .p-card-body {
-      padding: 1.5rem;
+      padding: var(--spacing-lg);
     }
 
     .items-list {
-      margin-bottom: 1.5rem;
-      background: var(--surface, #ffffff);
-      border-radius: 0.75rem;
+      margin-bottom: var(--spacing-lg);
+      background: var(--surface);
+      border-radius: var(--radius-lg);
       overflow: hidden;
-      border: 1px solid var(--border-color, #e2e8f0);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-xs);
     }
 
     .item-summary {
-      padding: 1.25rem 1.5rem;
-      border-bottom: 1px solid var(--border-color, #e2e8f0);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      transition: background-color 0.2s ease;
+      padding: var(--spacing-lg) var(--spacing-xl);
+      border-bottom: 1px solid var(--border-light);
+      transition: all var(--transition-base);
+    }
+
+    .item-summary.clickable {
+      cursor: pointer;
     }
 
     .item-summary:hover {
-      background-color: var(--background, #f8fafc);
+      background-color: var(--background);
+    }
+
+    .item-summary.clickable:hover {
+      background-color: var(--primary-50);
+      transform: translateX(4px);
     }
 
     .item-summary:last-child {
       border-bottom: none;
     }
 
-    .item-name {
-      font-weight: 600;
-      color: var(--text-primary, #1e293b);
-      font-size: 1rem;
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: var(--spacing-sm);
     }
 
-    .item-meta {
-      display: flex;
-      gap: 1.5rem;
+    .item-name {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      flex: 1;
+    }
+
+    .item-price {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--primary-color);
+      margin-left: var(--spacing-md);
+    }
+
+    .item-description {
       font-size: 0.875rem;
-      color: var(--text-secondary, #64748b);
+      color: var(--text-secondary);
+      margin-bottom: var(--spacing-sm);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .item-details {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-sm);
+    }
+
+    .item-meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--spacing-md);
       align-items: center;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .item-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+    }
+
+    .item-place,
+    .item-serial,
+    .item-date {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .item-place i,
+    .item-serial i,
+    .item-date i {
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
     }
 
     .item-meta span {
-      padding: 0.25rem 0.75rem;
-      background: var(--background, #f8fafc);
-      border-radius: 0.5rem;
-      font-weight: 500;
+      padding: var(--spacing-xs) var(--spacing-md);
+      background: var(--primary-50);
+      color: var(--primary-color);
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 0.8125rem;
     }
 
     .empty-state {
       grid-column: 1 / -1;
       text-align: center;
-      padding: 4rem 2rem;
+      padding: var(--spacing-3xl) var(--spacing-xl);
     }
 
     .empty-state p {
-      margin-bottom: 1.5rem;
-      color: var(--text-secondary, #64748b);
+      margin-bottom: var(--spacing-lg);
+      color: var(--text-secondary);
       font-size: 1.125rem;
+      font-weight: 500;
     }
 
     /* Responsive design */
     @media (max-width: 768px) {
       .dashboard-container {
-        padding: 1rem;
-      }
-
-      .dashboard-header {
-        flex-direction: column;
-        gap: 1.5rem;
-        align-items: stretch;
-        padding: 1.25rem;
-      }
-
-      .dashboard-header h1 {
-        font-size: 1.75rem;
-        text-align: center;
-      }
-
-      .header-actions {
-        justify-content: center;
-        flex-wrap: wrap;
+        padding: var(--spacing-md);
       }
 
       .stats-grid {
         grid-template-columns: 1fr;
-        gap: 1rem;
-        padding: 1rem;
+        gap: var(--spacing-md);
+        padding: var(--spacing-lg);
       }
 
       .stat-value {
-        font-size: 2rem;
+        font-size: 2.25rem;
       }
 
-      .item-summary {
+      .item-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 0.75rem;
+        gap: var(--spacing-xs);
       }
 
-      .item-meta {
+      .item-price {
+        margin-left: 0;
+      }
+
+      .item-meta-row {
         width: 100%;
         justify-content: flex-start;
+        flex-wrap: wrap;
       }
-    }
-
-    /* Button improvements */
-    ::ng-deep .p-button {
-      border-radius: 0.5rem;
-      font-weight: 500;
-      transition: all 0.2s ease;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    }
-
-    ::ng-deep .p-button:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-    }
-
-    ::ng-deep .p-button:active {
-      transform: translateY(0);
     }
   `]
 })
 export class DashboardComponent implements OnInit {
   user$: Observable<any>;
   items: Item[] = [];
+  tags: Tag[] = [];
+  places: Place[] = [];
   loading = false;
   error: string | null = null;
 
@@ -458,7 +530,49 @@ export class DashboardComponent implements OnInit {
       take(1)
     ).subscribe(() => {
       this.loadItems();
+      this.loadTags();
+      this.loadPlaces();
     });
+  }
+
+  loadTags(): void {
+    this.itemsService.getTags().subscribe({
+      next: (tags) => {
+        this.tags = tags || [];
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error loading tags:', err);
+      }
+    });
+  }
+
+  loadPlaces(): void {
+    this.itemsService.getPlaces().subscribe({
+      next: (places) => {
+        this.places = places || [];
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error loading places:', err);
+      }
+    });
+  }
+
+  getTagName(tagId: number): string {
+    const tag = this.tags.find(t => t.id === tagId);
+    return tag?.name || `Tag ${tagId}`;
+  }
+
+  getPlaceName(placeId: number): string {
+    const place = this.places.find(p => p.id === placeId);
+    return place?.name || `Placering ${placeId}`;
+  }
+
+  formatDate(dateString: string): string {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('da-DK', { year: 'numeric', month: 'long', day: 'numeric' });
   }
 
   loadItems(): void {
@@ -512,14 +626,6 @@ export class DashboardComponent implements OnInit {
     return this.items
       .filter(item => item.price)
       .reduce((sum, item) => sum + (item.price || 0), 0);
-  }
-
-  get itemsWithPrice(): number {
-    return this.items.filter(item => item.price).length;
-  }
-
-  get itemsWithSerial(): number {
-    return this.items.filter(item => item.serial_number).length;
   }
 
   get recentItems(): Item[] {

@@ -139,30 +139,33 @@ import { AvatarModule } from 'primeng/avatar';
   styles: [`
     .profile-container {
       min-height: 100vh;
-      padding: 2rem;
-      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      padding: var(--spacing-xl);
+      background: var(--background);
     }
 
     .profile-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 2.5rem;
-      padding: 1.5rem 2rem;
-      background: var(--surface, #ffffff);
-      border-radius: 1rem;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+      margin-bottom: var(--spacing-2xl);
+      padding: var(--spacing-lg) var(--spacing-xl);
+      background: var(--surface);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+      transition: all var(--transition-base);
+    }
+
+    .profile-header:hover {
+      box-shadow: var(--shadow-md);
     }
 
     .profile-header h1 {
       font-size: 2.25rem;
       font-weight: 700;
-      background: linear-gradient(135deg, var(--primary-color, #6366f1) 0%, var(--secondary-color, #8b5cf6) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      color: var(--primary-color);
       margin: 0;
-      letter-spacing: -0.5px;
+      letter-spacing: -0.03em;
     }
 
     .header-actions {
@@ -201,15 +204,20 @@ import { AvatarModule } from 'primeng/avatar';
     }
 
     .profile-card ::ng-deep .p-card {
-      border-radius: 1rem;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-      border: 1px solid var(--border-color, #e2e8f0);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
       overflow: hidden;
+      transition: all var(--transition-base);
+    }
+
+    .profile-card ::ng-deep .p-card:hover {
+      box-shadow: var(--shadow-md);
     }
 
     .profile-header-card {
       padding: 2rem;
-      background: linear-gradient(135deg, var(--primary-color, #6366f1) 0%, var(--secondary-color, #8b5cf6) 100%);
+      background: var(--primary-color);
     }
 
     .profile-avatar-section {
@@ -307,7 +315,7 @@ import { AvatarModule } from 'primeng/avatar';
     }
 
     .verified {
-      color: var(--success-color, #10b981);
+      color: var(--primary-color);
       font-weight: 600;
     }
 

@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { Observable } from 'rxjs';
-
 import { ButtonModule } from 'primeng/button';
 
 @Component({
@@ -33,7 +32,7 @@ import { ButtonModule } from 'primeng/button';
               <i class="pi pi-list"></i>
               <span>Indbo</span>
             </a>
-            <a routerLink="/categories" routerLinkActive="active" class="nav-link">
+            <a routerLink="/tags" routerLinkActive="active" class="nav-link">
               <i class="pi pi-tags"></i>
               <span>Tags</span>
             </a>
@@ -62,22 +61,24 @@ import { ButtonModule } from 'primeng/button';
   `,
   styles: [`
     .app-header {
-      background: var(--surface, #ffffff);
-      border-bottom: 1px solid var(--border-color, #e2e8f0);
-      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
       position: sticky;
       top: 0;
-      z-index: 1000;
+      z-index: var(--z-sticky);
+      backdrop-filter: blur(12px);
+      background: rgba(255, 255, 255, 0.8);
     }
 
     .header-container {
       max-width: 1400px;
       margin: 0 auto;
-      padding: 1rem 2rem;
+      padding: var(--spacing-md) var(--spacing-xl);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 2rem;
+      gap: var(--spacing-xl);
     }
 
     .header-left {
@@ -89,28 +90,28 @@ import { ButtonModule } from 'primeng/button';
       font-size: 1.5rem;
       font-weight: 700;
       margin: 0;
-      background: linear-gradient(135deg, var(--primary-color, #6366f1) 0%, var(--secondary-color, #8b5cf6) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      color: var(--primary-color);
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: var(--spacing-sm);
       cursor: pointer;
-      transition: transform 0.2s ease;
+      transition: all var(--transition-base);
+      letter-spacing: -0.02em;
     }
 
     .app-title:hover {
-      transform: scale(1.05);
+      transform: translateY(-1px);
+      color: var(--primary-dark);
     }
 
     .app-title i {
-      font-size: 1.25rem;
+      font-size: 1.375rem;
+      color: var(--primary-color);
     }
 
     .header-nav {
       display: flex;
-      gap: 0.5rem;
+      gap: var(--spacing-xs);
       align-items: center;
       flex: 1;
       justify-content: center;
@@ -119,24 +120,44 @@ import { ButtonModule } from 'primeng/button';
     .nav-link {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem 1rem;
-      border-radius: 0.5rem;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-sm) var(--spacing-md);
+      border-radius: var(--radius-md);
       text-decoration: none;
-      color: var(--text-secondary, #64748b);
+      color: var(--text-secondary);
       font-weight: 500;
-      font-size: 0.875rem;
-      transition: all 0.2s ease;
+      font-size: 0.9375rem;
+      transition: all var(--transition-base);
+      position: relative;
+    }
+
+    .nav-link::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%) scaleX(0);
+      width: 80%;
+      height: 2px;
+      background: var(--primary-color);
+      border-radius: var(--radius-full);
+      transition: transform var(--transition-base);
     }
 
     .nav-link:hover {
-      background: var(--background, #f8fafc);
-      color: var(--primary-color, #6366f1);
+      background: var(--primary-50);
+      color: var(--primary-color);
+      transform: translateY(-1px);
     }
 
     .nav-link.active {
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
-      color: var(--primary-color, #6366f1);
+      background: var(--primary-100);
+      color: var(--primary-color);
+      font-weight: 600;
+    }
+
+    .nav-link.active::before {
+      transform: translateX(-50%) scaleX(1);
     }
 
     .header-right {
@@ -144,9 +165,19 @@ import { ButtonModule } from 'primeng/button';
       align-items: center;
     }
 
+    ::ng-deep .p-button-text {
+      color: var(--text-secondary);
+      padding: var(--spacing-sm) var(--spacing-md);
+      
+      &:hover {
+        background: var(--background-alt);
+        color: var(--text-primary);
+      }
+    }
+
     @media (max-width: 768px) {
       .header-container {
-        padding: 1rem;
+        padding: var(--spacing-md);
         flex-wrap: wrap;
       }
 
@@ -154,15 +185,12 @@ import { ButtonModule } from 'primeng/button';
         font-size: 1.25rem;
       }
 
-      .app-title span {
-        display: none;
-      }
-
       .header-nav {
         order: 3;
         width: 100%;
         justify-content: space-around;
-        margin-top: 0.5rem;
+        margin-top: var(--spacing-sm);
+        gap: var(--spacing-xs);
       }
 
       .nav-link span {
@@ -170,9 +198,10 @@ import { ButtonModule } from 'primeng/button';
       }
 
       .nav-link {
-        padding: 0.5rem;
+        padding: var(--spacing-sm);
         flex: 1;
         justify-content: center;
+        min-width: 44px;
       }
     }
   `]
